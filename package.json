@@ -18,6 +18,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "npm run lint && nyc mocha && node support/specsplit.js",
+    "test-hotcrp": "mocha -f HotCRP",
     "coverage": "npm run test && nyc report --reporter html",
     "report-coveralls": "nyc --reporter=lcov mocha",
     "doc": "node support/build_doc.js",
