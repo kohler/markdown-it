@@ -425,6 +425,17 @@ describe('HotCRP', function () {
  to concern is the InternetZoo topology.</p>\n'
     );
   });
+
+  it('Should parse math blocks', function () {
+    assert.strictEqual(
+      md.render('$$ fart $$'),
+      '<div class="math">fart</div>\n'
+    );
+    assert.strictEqual(
+      md.render('> $$\n>   \\array{1}{2}\n> $$\n> $$  foo bar baz $$'),
+      '<blockquote>\n<div class="math">\\array{1}{2}</div>\n<div class="math">foo bar baz</div>\n</blockquote>\n'
+    );
+  });
 });
 
 
