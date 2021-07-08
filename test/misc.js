@@ -505,6 +505,13 @@ describe('HotCRP', function () {
       '<hr>\n<p>Hello' + ' Hello'.repeat(20) + '</p>\n<hr>\n<h1>Hi</h1>\n<p>P</p>\n'
     );
   });
+
+  it('Should handle LaTeX escapes', function () {
+    assert.strictEqual(
+      md.render('\\emph{This is a \\textbf{test}. $f$}'),
+      '<p><em>This is a <strong>test</strong>. <span class="math">f</span></em></p>\n'
+    );
+  });
 });
 
 
