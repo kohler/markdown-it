@@ -460,6 +460,11 @@ describe('HotCRP', function () {
       md.render('=========\nHello\n========\n\nHi\n===\nP'),
       '<hr>\n<h1>Hello</h1>\n<h1>Hi</h1>\n<p>P</p>\n'
     );
+
+    assert.strictEqual(
+      md.render('=========\nHello' + ' Hello'.repeat(20) + '\n========\n\nHi\n===\nP'),
+      '<hr>\n<p>Hello' + ' Hello'.repeat(20) + '</p>\n<hr>\n<h1>Hi</h1>\n<p>P</p>\n'
+    );
   });
 });
 
