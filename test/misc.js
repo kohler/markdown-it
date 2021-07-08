@@ -428,6 +428,24 @@ describe('HotCRP', function () {
       '<blockquote>\n<div class="math">\\array{1}{2}</div>\n<div class="math">foo bar baz</div>\n</blockquote>\n'
     );
   });
+
+  it('Should autolink http: and https:', function () {
+    assert.strictEqual(
+      md.render('Hello, http://www.com http://> https://example.org/hello! ' +
+        '<https://example.org/hello!>'),
+      '<p>Hello, <a href="http://www.com">http://www.com</a> http://&gt; ' +
+      '<a href="https://example.org/hello">https://example.org/hello</a>! ' +
+      '<a href="https://example.org/hello!">https://example.org/hello!</a></p>\n'
+    );
+  });
+
+  it('Should autolink mailto:', function () {
+    assert.strictEqual(
+      md.render('Hello, mailto:fart@barf.org <fart@barf.org>'),
+      '<p>Hello, <a href="mailto:fart@barf.org">fart@barf.org</a> ' +
+      '<a href="mailto:fart@barf.org">fart@barf.org</a></p>\n'
+    );
+  });
 });
 
 
