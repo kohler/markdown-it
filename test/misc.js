@@ -398,7 +398,7 @@ describe('Ordered list info', function () {
 
 
 describe('HotCRP', function () {
-  var md = markdownit({ hotcrp: true });
+  var md = markdownit('hotcrp');
 
   it('Should handle a missing backtick', function () {
     assert.strictEqual(
