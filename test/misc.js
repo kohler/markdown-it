@@ -501,6 +501,24 @@ describe('HotCRP', function () {
       '<p>In multi-Paxos, leaders send DECIDE messages after receiving\nACKs. But they may safely send DECIDE messages at other times, too, as long as\nthe contents of the DECIDE messages are OK.</p>\n<p>So assume a leader <span class=\"math\">\\ell</span> wants to send a <span class=\"math\">\\langle \\text{DECIDE}, R, W\n\\rangle</span> message to all servers at the start of its leadership term,\nimmediately after receiving a quorum of PREPARE messages. How can the leader\nsafely compute <span class=\"math\">R</span> and <span class=\"math\">W</span>?</p>\n<p>You may refer to the leader’s state variables, as well as to the\n<span class=\"math\">\\textit{ar}_j</span> and <span class=\"math\">\\textit{AV}_j</span> values received in the PREPARE quorum.\nYour answer must not break consensus. For full credit, in some situations the\nnew DECIDEs should cause some servers to send Nancy-messages sooner than they\nwould have otherwise.</p>\n<div class=\"math\">\\sum_0^\\infty f(x)</div>\n'
     );
   });
+
+  it('Should autolink http: and https:', function () {
+    assert.strictEqual(
+      md.render('Hello, http://www.com http://> https://example.org/hello! ' +
+        '<https://example.org/hello!>'),
+      '<p>Hello, <a href="http://www.com">http://www.com</a> http://&gt; ' +
+      '<a href="https://example.org/hello">https://example.org/hello</a>! ' +
+      '<a href="https://example.org/hello!">https://example.org/hello!</a></p>\n'
+    );
+  });
+
+  it('Should autolink mailto:', function () {
+    assert.strictEqual(
+      md.render('Hello, mailto:fart@barf.org <fart@barf.org>'),
+      '<p>Hello, <a href="mailto:fart@barf.org">fart@barf.org</a> ' +
+      '<a href="mailto:fart@barf.org">fart@barf.org</a></p>\n'
+    );
+  });
 });
 
 
