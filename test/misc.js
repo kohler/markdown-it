@@ -512,6 +512,14 @@ describe('HotCRP', function () {
       '<p><em>This is a <strong>test</strong>. <span class="math">f</span></em></p>\n'
     );
   });
+
+  it('Should mark cross-site <img> with crossorigin', function () {
+    assert.strictEqual(
+      md.render('![A](https://dude.com/hi.jpg) ![B](//dude.com/hj.jpg) ![C](/hi.jpg)'),
+      '<p><img src="https://dude.com/hi.jpg" alt="A" crossorigin> ' +
+      '<img src="//dude.com/hj.jpg" alt="B" crossorigin> <img src="/hi.jpg" alt="C"></p>\n'
+    );
+  });
 });
 
 
