@@ -3209,13 +3209,16 @@
 	 *
 	 * Render token attributes to string.
 	 **/  Renderer.prototype.renderAttrs = function renderAttrs(token) {
-    var i, l, result;
-    if (!token.attrs) {
-      return "";
-    }
-    result = "";
-    for (i = 0, l = token.attrs.length; i < l; i++) {
-      result += " " + escapeHtml(token.attrs[i][0]) + '="' + escapeHtml(token.attrs[i][1]) + '"';
+    var i, l, a, result = "";
+    if (token.attrs) {
+      for (i = 0, l = token.attrs.length; i < l; i++) {
+        a = token.attrs[i];
+        if (a[1] !== null) {
+          result = result.concat(" ", escapeHtml(a[0]), '="', escapeHtml(a[1]), '"');
+        } else {
+          result = result.concat(" ", escapeHtml(a[0]));
+        }
+      }
     }
     return result;
   };
@@ -6463,6 +6466,9 @@
       if (title) {
         attrs.push([ "title", title ]);
       }
+      if ("imageCrossorigin" in state.md.options && /^(?:[-.+A-Za-z]+:|\/\/)/.test(href)) {
+        attrs.push([ "crossorigin", state.md.options.imageCrossorigin ]);
+      }
     }
     state.pos = pos;
     state.posMax = max;
@@ -8078,6 +8084,8 @@
       // CSS language prefix for fenced blocks
       linkify: false,
       // autoconvert URL-like texts to links
+      imageCrossorigin: null,
+      // add `crossorigin` attribute to cross-site <img>
       // Enable some language-neutral replacements + quotes beautification
       typographer: false,
       // Turn on hotcrp-specific features
