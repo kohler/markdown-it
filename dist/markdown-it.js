@@ -2765,6 +2765,15 @@
       }
       return false;
     }
+    function isSpaceNB(code) {
+      switch (code) {
+       case 9:
+       case 32:
+       case 160:
+        return true;
+      }
+      return false;
+    }
     // Zs (unicode class) || [\t\f\v\r\n]
         function isWhiteSpace(code) {
       if (code >= 8192 && code <= 8202) {
@@ -2844,6 +2853,9 @@
         return false;
       }
     }
+    function isCloseBracket(ch) {
+      return ch === 41 /* ) */ || ch === 93 /* ] */ || ch === 125 /* } */;
+    }
     // Hepler to unify [reference labels].
     
         function normalizeReference(str) {
@@ -2911,9 +2923,11 @@
         exports.escapeHtml = escapeHtml;
     exports.arrayReplaceAt = arrayReplaceAt;
     exports.isSpace = isSpace;
+    exports.isSpaceNB = isSpaceNB;
     exports.isWhiteSpace = isWhiteSpace;
     exports.isMdAsciiPunct = isMdAsciiPunct;
     exports.isPunctChar = isPunctChar;
+    exports.isCloseBracket = isCloseBracket;
     exports.escapeRE = escapeRE;
     exports.normalizeReference = normalizeReference;
   }));
@@ -3149,6 +3163,12 @@
   default_rules.html_inline = function(tokens, idx /*, options, env */) {
     return tokens[idx].content;
   };
+  default_rules.math_inline = function(tokens, idx /*, options, env */) {
+    return '<span class="math">'.concat(escapeHtml(tokens[idx].content), "</span>");
+  };
+  default_rules.math_block = function(tokens, idx /*, options, env */) {
+    return '<div class="math">'.concat(escapeHtml(tokens[idx].content), "</div>\n");
+  };
   /**
 	 * new Renderer()
 	 *
@@ -3189,13 +3209,16 @@
 	 *
 	 * Render token attributes to string.
 	 **/  Renderer.prototype.renderAttrs = function renderAttrs(token) {
-    var i, l, result;
-    if (!token.attrs) {
-      return "";
-    }
-    result = "";
-    for (i = 0, l = token.attrs.length; i < l; i++) {
-      result += " " + escapeHtml(token.attrs[i][0]) + '="' + escapeHtml(token.attrs[i][1]) + '"';
+    var i, l, a, result = "";
+    if (token.attrs) {
+      for (i = 0, l = token.attrs.length; i < l; i++) {
+        a = token.attrs[i];
+        if (a[1] !== null) {
+          result = result.concat(" ", escapeHtml(a[0]), '="', escapeHtml(a[1]), '"');
+        } else {
+          result = result.concat(" ", escapeHtml(a[0]));
+        }
+      }
     }
     return result;
   };
@@ -3836,8 +3859,8 @@
       }
     }
   };
-  var isWhiteSpace$1 = utils.isWhiteSpace;
-  var isPunctChar$1 = utils.isPunctChar;
+  var isWhiteSpace$5 = utils.isWhiteSpace;
+  var isPunctChar$2 = utils.isPunctChar;
   var isMdAsciiPunct$1 = utils.isMdAsciiPunct;
   var QUOTE_TEST_RE = /['"]/;
   var QUOTE_RE = /['"]/g;
@@ -3904,10 +3927,10 @@
             break;
           }
         }
-        isLastPunctChar = isMdAsciiPunct$1(lastChar) || isPunctChar$1(String.fromCharCode(lastChar));
-        isNextPunctChar = isMdAsciiPunct$1(nextChar) || isPunctChar$1(String.fromCharCode(nextChar));
-        isLastWhiteSpace = isWhiteSpace$1(lastChar);
-        isNextWhiteSpace = isWhiteSpace$1(nextChar);
+        isLastPunctChar = isMdAsciiPunct$1(lastChar) || isPunctChar$2(String.fromCharCode(lastChar));
+        isNextPunctChar = isMdAsciiPunct$1(nextChar) || isPunctChar$2(String.fromCharCode(nextChar));
+        isLastWhiteSpace = isWhiteSpace$5(lastChar);
+        isNextWhiteSpace = isWhiteSpace$5(nextChar);
         if (isNextWhiteSpace) {
           canOpen = false;
         } else if (isNextPunctChar) {
@@ -4333,7 +4356,7 @@
     // header row will define an amount of columns in the entire table,
     // and align row should be exactly the same (the rest of the rows can differ)
         columnCount = columns.length;
-    if (columnCount === 0 || columnCount !== aligns.length) {
+    if (columnCount === 0 || columnCount !== aligns.length && (!state.md.options.hotcrp || aligns.length === 1 || columnCount === 1)) {
       return false;
     }
     if (silent) {
@@ -4737,39 +4760,83 @@
     state.blkIndent = oldIndent;
     return true;
   };
+  var isWhiteSpace$4 = utils.isWhiteSpace;
+  var math_block = function math_block(state, startLine, endLine, silent) {
+    var line, pos = state.bMarks[startLine] + state.tShift[startLine], max = state.eMarks[startLine], src = state.src;
+    if (state.sCount[startLine] - state.blkIndent >= 4 || pos + 2 > max || src.charCodeAt(pos) !== 36 /* $ */ || src.charCodeAt(pos + 1) !== 36 || src.charCodeAt(pos + 2) === 36) {
+      return false;
+    }
+    for (line = startLine; line !== endLine; ++line) {
+      if (state.sCount[line] < state.blkIndent) {
+        return false;
+      }
+      var lstart = Math.max(state.bMarks[line] + state.sCount[line], pos + 2), lend = state.eMarks[line];
+      while (lend > lstart && isWhiteSpace$4(src.charCodeAt(lend - 1))) {
+        --lend;
+      }
+      if (lend > lstart + 1 && src.charCodeAt(lend - 1) === 36 && src.charCodeAt(lend - 2) === 36) {
+        state.line = line + 1;
+        if (silent) {
+          return true;
+        }
+        var content = state.getLines(startLine, state.line, state.sCount[startLine], false);
+        lstart = 2;
+        lend = content.length - (state.eMarks[line] - lend + 2);
+        while (lstart < lend && isWhiteSpace$4(content.charCodeAt(lstart))) {
+          ++lstart;
+        }
+        while (lstart < lend && isWhiteSpace$4(content.charCodeAt(lend - 1))) {
+          --lend;
+        }
+        content = content.slice(lstart, lend);
+        var token = state.push("math_block", "math", 0);
+        token.block = true;
+        token.content = content;
+        token.map = [ startLine, state.line ];
+        token.markup = "$$";
+        return true;
+      }
+    }
+    return false;
+  };
   var isSpace$8 = utils.isSpace;
   var hr = function hr(state, startLine, endLine, silent) {
-    var marker, cnt, ch, token, pos = state.bMarks[startLine] + state.tShift[startLine], max = state.eMarks[startLine];
+    var marker, cnt, ch, token, src = state.src, pos = state.bMarks[startLine] + state.tShift[startLine], max = state.eMarks[startLine];
     // if it's indented more than 3 spaces, it should be a code block
         if (state.sCount[startLine] - state.blkIndent >= 4) {
       return false;
     }
-    marker = state.src.charCodeAt(pos++);
+    marker = src.charCodeAt(pos);
     // Check hr marker
-        if (marker !== 42 /* * */ && marker !== 45 /* - */ && marker !== 95 /* _ */) {
+        if (marker !== 42 /* * */ && marker !== 45 /* - */ && marker !== 95 /* _ */ && (marker !== 61 /* = */ || !state.md.options.hotcrp)) {
       return false;
     }
     // markers can be mixed with spaces, but there should be at least 3 of them
-        cnt = 1;
-    while (pos < max) {
-      ch = state.src.charCodeAt(pos++);
-      if (ch !== marker && !isSpace$8(ch)) {
+        while (pos !== max && isSpace$8(src.charCodeAt(max - 1))) {
+      --max;
+    }
+    cnt = 1;
+    for (++pos; pos !== max; ++pos) {
+      if ((ch = src.charCodeAt(pos)) === marker) {
+        ++cnt;
+      } else if (!isSpace$8(ch)) {
         return false;
-      }
-      if (ch === marker) {
-        cnt++;
       }
     }
     if (cnt < 3) {
       return false;
     }
-    if (silent) {
-      return true;
-    }
     state.line = startLine + 1;
-    token = state.push("hr", "hr", 0);
-    token.map = [ startLine, state.line ];
-    token.markup = Array(cnt + 1).join(String.fromCharCode(marker));
+    if (!silent) {
+      token = state.push("hr", "hr", 0);
+      token.map = [ startLine, state.line ];
+      token.markup = String.fromCharCode(marker).repeat(3);
+      if ((marker === 45 || marker === 61) && state.bMarks[startLine] + state.tShift[startLine] + cnt === max) {
+        state.lastSetext = token;
+      } else {
+        state.lastSetext = null;
+      }
+    }
     return true;
   };
   var isSpace$7 = utils.isSpace;
@@ -4781,7 +4848,7 @@
     max = state.eMarks[startLine];
     marker = state.src.charCodeAt(pos++);
     // Check bullet
-        if (marker !== 42 /* * */ && marker !== 45 /* - */ && marker !== 43 /* + */) {
+        if (marker !== 42 /* * */ && marker !== 45 /* - */ && marker !== 43 /* + */ && (marker !== 8226 /* • */ || !state.md.options.hotcrp)) {
       return -1;
     }
     if (pos < max) {
@@ -5297,7 +5364,7 @@
     token.content = state.getLines(startLine, nextLine, state.blkIndent, true);
     return true;
   };
-  var isSpace$5 = utils.isSpace;
+  var isSpace$5 = utils.isSpace, isSpaceNB = utils.isSpaceNB;
   var heading = function heading(state, startLine, endLine, silent) {
     var ch, level, tmp, token, pos = state.bMarks[startLine] + state.tShift[startLine], max = state.eMarks[startLine];
     // if it's indented more than 3 spaces, it should be a code block
@@ -5315,7 +5382,8 @@
       level++;
       ch = state.src.charCodeAt(++pos);
     }
-    if (level > 6 || pos < max && !isSpace$5(ch)) {
+    var issp = state.md.options.hotcrp ? isSpaceNB : isSpace$5;
+    if (level > 6 || pos < max && !issp(ch)) {
       return false;
     }
     if (silent) {
@@ -5325,7 +5393,7 @@
         max = state.skipSpacesBack(max, pos);
     tmp = state.skipCharsBack(max, 35, pos);
  // #
-        if (tmp > pos && isSpace$5(state.src.charCodeAt(tmp - 1))) {
+        if (tmp > pos && issp(state.src.charCodeAt(tmp - 1))) {
       max = tmp;
     }
     state.line = startLine + 1;
@@ -5342,7 +5410,7 @@
   };
   // lheading (---, ===)
     var lheading = function lheading(state, startLine, endLine /*, silent*/) {
-    var content, terminate, i, l, token, pos, max, level, marker, nextLine = startLine + 1, oldParentType, terminatorRules = state.md.block.ruler.getRules("paragraph");
+    var content, terminate, i, l, token, pos, max, level, marker, nmarker, src = state.src, nextLine = startLine + 1, oldParentType, terminatorRules = state.md.block.ruler.getRules("paragraph");
     // if it's indented more than 3 spaces, it should be a code block
         if (state.sCount[startLine] - state.blkIndent >= 4) {
       return false;
@@ -5364,10 +5432,13 @@
         pos = state.bMarks[nextLine] + state.tShift[nextLine];
         max = state.eMarks[nextLine];
         if (pos < max) {
-          marker = state.src.charCodeAt(pos);
+          marker = src.charCodeAt(pos);
           if (marker === 45 /* - */ || marker === 61 /* = */) {
-            pos = state.skipChars(pos, marker);
-            pos = state.skipSpaces(pos);
+            nmarker = 1;
+            while (pos + nmarker < max && src.charCodeAt(pos + nmarker) === marker) {
+              ++nmarker;
+            }
+            pos = state.skipSpaces(pos + nmarker);
             if (pos >= max) {
               level = marker === 61 /* = */ ? 1 : 2;
               break;
@@ -5395,11 +5466,22 @@
       // Didn't find valid underline
       return false;
     }
+    if (startLine + 1 !== nextLine && state.md.options.hotcrp) {
+      // only one-line headings allowed
+      return false;
+    }
     content = state.getLines(startLine, nextLine, state.blkIndent, false).trim();
+    if (content.length > 60 && state.md.options.hotcrp && (nextLine + 1 === endLine || state.lastSetext && state.lastSetext.type === "hr" && state.sCount[nextLine] === state.sCount[state.lastSetext.map[0]] && state.lastSetext.markup.charCodeAt(0) === marker)) {
+      // do not end on a suspicious heading
+      return false;
+    }
     state.line = nextLine + 1;
     token = state.push("heading_open", "h" + String(level), 1);
     token.markup = String.fromCharCode(marker);
     token.map = [ startLine, state.line ];
+    if (!state.lastSetext || state.lastSetext.type !== "hr" || state.sCount[nextLine] !== state.sCount[state.lastSetext.map[0]] || state.lastSetext.markup.charCodeAt(0) !== marker) {
+      state.lastSetext = token;
+    }
     token = state.push("inline", "", 0);
     token.content = content;
     token.map = [ startLine, state.line - 1 ];
@@ -5493,6 +5575,8 @@
  // indent of the current dd block (-1 if there isn't any)
         this.listIndent = -1;
  // indent of the current list block (-1 if there isn't any)
+        this.lastSetext = null;
+ // last setext heading or hr
     // can be 'blockquote', 'list', 'root', 'paragraph' or 'reference'
     // used in lists to determine if they interrupt a paragraph
         this.parentType = "root";
@@ -5645,7 +5729,7 @@
       if (lineIndent > indent) {
         // partially expanding tabs in code blocks, e.g '\t\tfoobar'
         // with indent=2 becomes '  \tfoobar'
-        queue[i] = new Array(lineIndent - indent + 1).join(" ") + this.src.slice(first, last);
+        queue[i] = " ".repeat(lineIndent - indent) + this.src.slice(first, last);
       } else {
         queue[i] = this.src.slice(first, last);
       }
@@ -5658,7 +5742,7 @@
   var _rules$1 = [ 
   // First 2 params - rule name & source. Secondary array - list of rules,
   // which can be terminated by this one.
-  [ "table", table, [ "paragraph", "reference" ] ], [ "code", code ], [ "fence", fence, [ "paragraph", "reference", "blockquote", "list" ] ], [ "blockquote", blockquote, [ "paragraph", "reference", "blockquote", "list" ] ], [ "hr", hr, [ "paragraph", "reference", "blockquote", "list" ] ], [ "list", list, [ "paragraph", "reference", "blockquote" ] ], [ "reference", reference ], [ "html_block", html_block, [ "paragraph", "reference", "blockquote" ] ], [ "heading", heading, [ "paragraph", "reference", "blockquote" ] ], [ "lheading", lheading ], [ "paragraph", paragraph ] ];
+  [ "table", table, [ "paragraph", "reference" ] ], [ "code", code ], [ "fence", fence, [ "paragraph", "reference", "blockquote", "list" ] ], [ "blockquote", blockquote, [ "paragraph", "reference", "blockquote", "list" ] ], [ "math_block", math_block, [ "paragraph", "reference", "blockquote", "list" ] ], [ "hr", hr, [ "paragraph", "reference", "blockquote", "list" ] ], [ "list", list, [ "paragraph", "reference", "blockquote" ] ], [ "reference", reference ], [ "html_block", html_block, [ "paragraph", "reference", "blockquote" ] ], [ "heading", heading, [ "paragraph", "reference", "blockquote" ] ], [ "lheading", lheading ], [ "paragraph", paragraph ] ];
   /**
 	 * new ParserBlock()
 	 **/  function ParserBlock() {
@@ -5773,15 +5857,15 @@
     }
   }
   var text = function text(state, silent) {
-    var pos = state.pos;
-    while (pos < state.posMax && !isTerminatorChar(state.src.charCodeAt(pos))) {
+    var src = state.src, pos = state.pos, max = state.posMax;
+    while (pos < max && !isTerminatorChar(src.charCodeAt(pos))) {
       pos++;
     }
     if (pos === state.pos) {
       return false;
     }
     if (!silent) {
-      state.pending += state.src.slice(state.pos, pos);
+      state.pending += src.slice(state.pos, pos);
     }
     state.pos = pos;
     return true;
@@ -5860,6 +5944,77 @@
     state.pos = pos;
     return true;
   };
+  // Process LaTeX escapes
+    function processLatexEscapePair(state, delimiters, i) {
+    var startDelim = delimiters[i], endDelim = delimiters[startDelim.end], isStrong, token;
+    token = state.tokens[startDelim.token];
+    isStrong = token.content === "\\textbf{";
+    token.type = isStrong ? "strong_open" : "em_open";
+    token.tag = isStrong ? "strong" : "em";
+    token.nesting = 1;
+    token.markup = "latex";
+    token.content = "";
+    token = state.tokens[endDelim.token];
+    token.type = isStrong ? "strong_close" : "em_close";
+    token.tag = isStrong ? "strong" : "em";
+    token.nesting = -1;
+    token.markup = "latex";
+    token.content = "";
+  }
+  var latex_escape = function latex_escape(state, silent) {
+    var ch, ch2, w, len, src = state.src, pos = state.pos, max = state.posMax, token;
+    if (silent) {
+      return false;
+    }
+    ch = src.charCodeAt(pos);
+    if (ch === 92 /* \ */) {
+      ch2 = src.charCodeAt(pos + 1);
+      if (ch2 === 101 /* e */) {
+        len = 6;
+      } else if (ch2 === 116 /* t */) {
+        len = 8;
+      } else {
+        return false;
+      }
+      if (pos + len >= max || src.charCodeAt(pos + len - 1) !== 123 /* { */) {
+        return false;
+      }
+      w = src.slice(pos, pos + len);
+      if (w === "\\emph{" || w === "\\textit{" || w === "\\textbf{") {
+        token = state.push("text", "", 0);
+        token.content = w;
+        state.delimiters.push({
+          marker: -1e3,
+          length: 0,
+          jump: 0,
+          token: state.tokens.length - 1,
+          end: -1,
+          open: true,
+          close: false,
+          pairf: processLatexEscapePair
+        });
+        ++state.latexEscapes;
+        state.pos += len;
+        return true;
+      }
+    } else if (ch === 125 /* } */ && state.latexEscapes > 0) {
+      token = state.push("text", "", 0);
+      token.content = String.fromCharCode(ch);
+      state.delimiters.push({
+        marker: -1e3,
+        length: 0,
+        jump: 0,
+        token: state.tokens.length - 1,
+        end: -1,
+        open: false,
+        close: true
+      });
+      --state.latexEscapes;
+      state.pos += 1;
+      return true;
+    }
+    return false;
+  };
   var isSpace$2 = utils.isSpace;
   var ESCAPED = [];
   for (var i = 0; i < 256; i++) {
@@ -5900,7 +6055,7 @@
     origStr = "\\" + escapedStr;
     if (!silent) {
       token = state.push("text_special", "", 0);
-      if (ch1 < 256 && ESCAPED[ch1] !== 0) {
+      if (ch1 < 256 && ESCAPED[ch1] !== 0 || ch1 === 8226 && state.md.options.hotcrp) {
         token.content = escapedStr;
       } else {
         token.content = origStr;
@@ -5911,8 +6066,65 @@
     state.pos = pos + 1;
     return true;
   };
-  // Parse backticks
-    var backticks = function backtick(state, silent) {
+  var isWhiteSpace$3 = utils.isWhiteSpace;
+  function escapeBefore(str, pos) {
+    var i = 0;
+    while (str.charCodeAt(pos - i - 1) === 92) {
+      ++i;
+    }
+    return i % 2 === 1;
+  }
+  function isDigit(code) {
+    return code >= 48 && code <= 57;
+  }
+  var math_inline = function math_inline(state, silent) {
+    var pos = state.pos, max = state.posMax, matchStart;
+    if (state.src.charCodeAt(pos) !== 36) {
+      return false;
+    }
+    var start = pos;
+    ++pos;
+    while (pos < max && state.src.charCodeAt(pos) === 36) {
+      ++pos;
+    }
+    var delim = state.src.slice(start, pos);
+    if (pos === max || delim.length > 2 || isWhiteSpace$3(state.src.charCodeAt(pos))) {
+      if (!silent) {
+        state.pending += delim;
+      }
+      state.pos += delim.length;
+      return true;
+    }
+    while ((matchStart = state.src.indexOf(delim, pos)) !== -1) {
+      var ch = state.src.charCodeAt(matchStart - 1);
+      if (ch === 92) {
+        if (escapeBefore(state.src, matchStart)) {
+          ++pos;
+          continue;
+        }
+      } else if (isWhiteSpace$3(ch)) {
+        if (ch !== 32 && ch !== 9 || !escapeBefore(state.src, matchStart)) {
+          break;
+        }
+      } else if (matchStart + delim.length < max && isDigit(state.src.charCodeAt(matchStart + delim.length)) && (start === 0 || !isDigit(state.src.charCodeAt(start - 1)))) {
+        break;
+      }
+      if (!silent) {
+        var token = state.push("math_inline", "math", 0);
+        token.markup = delim;
+        token.content = state.src.slice(start + delim.length, matchStart);
+      }
+      state.pos = matchStart + delim.length;
+      return true;
+    }
+    if (!silent) {
+      state.pending += delim;
+    }
+    state.pos += delim.length;
+    return true;
+  };
+  var isWhiteSpace$2 = utils.isWhiteSpace;
+  var backticks = function backtick(state, silent) {
     var start, max, marker, token, matchStart, matchEnd, openerLength, closerLength, pos = state.pos, ch = state.src.charCodeAt(pos);
     if (ch !== 96 /* ` */) {
       return false;
@@ -5926,43 +6138,74 @@
     }
     marker = state.src.slice(start, pos);
     openerLength = marker.length;
-    if (state.backticksScanned && (state.backticks[openerLength] || 0) <= start) {
-      if (!silent) state.pending += marker;
-      state.pos += openerLength;
-      return true;
-    }
-    matchStart = matchEnd = pos;
-    // Nothing found in the cache, scan until the end of the line (or until marker is found)
-        while ((matchStart = state.src.indexOf("`", matchEnd)) !== -1) {
-      matchEnd = matchStart + 1;
-      // scan marker length
-            while (matchEnd < max && state.src.charCodeAt(matchEnd) === 96 /* ` */) {
-        matchEnd++;
-      }
-      closerLength = matchEnd - matchStart;
-      if (closerLength === openerLength) {
-        // Found matching closer length.
-        if (!silent) {
-          token = state.push("code_inline", "code", 0);
-          token.markup = marker;
-          token.content = state.src.slice(pos, matchStart).replace(/\n/g, " ").replace(/^ (.+) $/, "$1");
+    if (!state.backticksScanned || (state.backticks[openerLength] || 0) > start) {
+      matchStart = matchEnd = pos;
+      // Nothing found in the cache, scan until the end of the line (or until marker is found)
+            while ((matchStart = state.src.indexOf("`", matchEnd)) !== -1) {
+        matchEnd = matchStart + 1;
+        // scan marker length
+                while (matchEnd < max && state.src.charCodeAt(matchEnd) === 96 /* ` */) {
+          matchEnd++;
         }
-        state.pos = matchEnd;
-        return true;
+        closerLength = matchEnd - matchStart;
+        if (closerLength === openerLength) {
+          // Check for matching spaces.
+          if (openerLength <= 2 && state.md.options.hotcrp && isWhiteSpace$2(state.src.charCodeAt(matchStart - 1)) !== isWhiteSpace$2(state.src.charCodeAt(pos))) {
+            break;
+          }
+          // Found matching closer length.
+                    if (!silent) {
+            token = state.push("code_inline", "code", 0);
+            token.markup = marker;
+            token.content = state.src.slice(pos, matchStart).replace(/\n/g, " ").replace(/^ (.+) $/, "$1");
+          }
+          state.pos = matchEnd;
+          return true;
+        }
+        // Some different length found, put it in cache as upper limit of where closer can be found
+                state.backticks[closerLength] = matchStart;
       }
-      // Some different length found, put it in cache as upper limit of where closer can be found
-            state.backticks[closerLength] = matchStart;
+      // Scanned through the end, didn't find anything
+            state.backticksScanned = matchStart === -1;
     }
-    // Scanned through the end, didn't find anything
-        state.backticksScanned = true;
     if (!silent) state.pending += marker;
     state.pos += openerLength;
     return true;
   };
   // ~~strike through~~
+    function processStrikethroughPair(state, delimiters, i) {
+    var startDelim = delimiters[i], endDelim = delimiters[startDelim.end], token, j;
+    token = state.tokens[startDelim.token];
+    token.type = "s_open";
+    token.tag = "s";
+    token.nesting = 1;
+    token.markup = "~~";
+    token.content = "";
+    token = state.tokens[endDelim.token];
+    token.type = "s_close";
+    token.tag = "s";
+    token.nesting = -1;
+    token.markup = "~~";
+    token.content = "";
+    // If a marker sequence has an odd number of characters, it's splitted
+    // like this: `~~~~~` -> `~` + `~~` + `~~`, leaving one marker at the
+    // start of the sequence.
+    
+    // So, we have to move all those markers after subsequent s_close tags.
+    
+        token = state.tokens[endDelim.token - 1];
+    if (token.type === "text" && token.content === "~") {
+      j = endDelim.token + 1;
+      while (j < state.tokens.length && state.tokens[j].type === "s_close") {
+        ++j;
+      }
+      state.tokens[endDelim.token - 1] = state.tokens[j - 1];
+      state.tokens[j - 1] = token;
+    }
+  }
   // Insert each marker as a separate text token, and add it to delimiter list
   
-    var tokenize$1 = function strikethrough(state, silent) {
+    var strikethrough = function strikethrough(state, silent) {
     var i, scanned, token, len, ch, start = state.pos, marker = state.src.charCodeAt(start);
     if (silent) {
       return false;
@@ -5991,86 +6234,56 @@
         token: state.tokens.length - 1,
         end: -1,
         open: scanned.can_open,
-        close: scanned.can_close
+        close: scanned.can_close,
+        pairf: processStrikethroughPair
       });
     }
     state.pos += scanned.length;
     return true;
   };
-  function postProcess$1(state, delimiters) {
-    var i, j, startDelim, endDelim, token, loneMarkers = [], max = delimiters.length;
-    for (i = 0; i < max; i++) {
-      startDelim = delimiters[i];
-      if (startDelim.marker !== 126 /* ~ */) {
-        continue;
-      }
-      if (startDelim.end === -1) {
-        continue;
-      }
-      endDelim = delimiters[startDelim.end];
-      token = state.tokens[startDelim.token];
-      token.type = "s_open";
-      token.tag = "s";
-      token.nesting = 1;
-      token.markup = "~~";
-      token.content = "";
-      token = state.tokens[endDelim.token];
-      token.type = "s_close";
-      token.tag = "s";
-      token.nesting = -1;
-      token.markup = "~~";
-      token.content = "";
-      if (state.tokens[endDelim.token - 1].type === "text" && state.tokens[endDelim.token - 1].content === "~") {
-        loneMarkers.push(endDelim.token - 1);
-      }
-    }
-    // If a marker sequence has an odd number of characters, it's splitted
-    // like this: `~~~~~` -> `~` + `~~` + `~~`, leaving one marker at the
-    // start of the sequence.
+  // Process *this* and _that_
+    function processEmphasisPair(state, delimiters, i) {
+    var startDelim = delimiters[i], endDelim = delimiters[startDelim.end], isStrong, ch, token;
+    // If the previous delimiter has the same marker and is adjacent to this one,
+    // merge those into one strong delimiter.
     
-    // So, we have to move all those markers after subsequent s_close tags.
+    // `<em><em>whatever</em></em>` -> `<strong>whatever</strong>`
     
-        while (loneMarkers.length) {
-      i = loneMarkers.pop();
-      j = i + 1;
-      while (j < state.tokens.length && state.tokens[j].type === "s_close") {
-        j++;
-      }
-      j--;
-      if (i !== j) {
-        token = state.tokens[j];
-        state.tokens[j] = state.tokens[i];
-        state.tokens[i] = token;
-      }
+        isStrong = i > 0 && delimiters[i - 1].end === startDelim.end + 1 && 
+    // check that the first two markers match and adjacent
+    delimiters[i - 1].marker === startDelim.marker && delimiters[i - 1].token === startDelim.token - 1 && 
+    // check that last two markers are adjacent (we can safely assume they match)
+    delimiters[startDelim.end + 1].token === endDelim.token + 1;
+    ch = String.fromCharCode(startDelim.marker);
+    token = state.tokens[startDelim.token];
+    token.type = isStrong ? "strong_open" : "em_open";
+    token.tag = isStrong ? "strong" : "em";
+    token.nesting = 1;
+    token.markup = isStrong ? ch + ch : ch;
+    token.content = "";
+    token = state.tokens[endDelim.token];
+    token.type = isStrong ? "strong_close" : "em_close";
+    token.tag = isStrong ? "strong" : "em";
+    token.nesting = -1;
+    token.markup = isStrong ? ch + ch : ch;
+    token.content = "";
+    if (isStrong) {
+      delimiters[i - 1].pairf = null;
+      state.tokens[delimiters[i - 1].token].content = "";
+      state.tokens[delimiters[startDelim.end + 1].token].content = "";
     }
   }
-  // Walk through delimiter list and replace text tokens with tags
-  
-    var postProcess_1$1 = function strikethrough(state) {
-    var curr, tokens_meta = state.tokens_meta, max = state.tokens_meta.length;
-    postProcess$1(state, state.delimiters);
-    for (curr = 0; curr < max; curr++) {
-      if (tokens_meta[curr] && tokens_meta[curr].delimiters) {
-        postProcess$1(state, tokens_meta[curr].delimiters);
-      }
-    }
-  };
-  var strikethrough = {
-    tokenize: tokenize$1,
-    postProcess: postProcess_1$1
-  };
-  // Process *this* and _that_
   // Insert each marker as a separate text token, and add it to delimiter list
   
-    var tokenize = function emphasis(state, silent) {
+    var emphasis = function emphasis(state, silent) {
     var i, scanned, token, start = state.pos, marker = state.src.charCodeAt(start);
-    if (silent) {
+    if (silent || state.latexEscapes > 0) {
       return false;
     }
     if (marker !== 95 /* _ */ && marker !== 42 /* * */) {
       return false;
     }
-    scanned = state.scanDelims(state.pos, marker === 42);
+    scanned = state.scanDelims(state.pos, marker === 42 && !state.md.options.hotcrp);
     for (i = 0; i < scanned.length; i++) {
       token = state.push("text", "", 0);
       token.content = String.fromCharCode(marker);
@@ -6087,68 +6300,13 @@
         // Boolean flags that determine if this delimiter could open or close
         // an emphasis.
         open: scanned.can_open,
-        close: scanned.can_close
+        close: scanned.can_close,
+        // Function for processing delimiter.
+        pairf: processEmphasisPair
       });
     }
     state.pos += scanned.length;
     return true;
-  };
-  function postProcess(state, delimiters) {
-    var i, startDelim, endDelim, token, ch, isStrong, max = delimiters.length;
-    for (i = max - 1; i >= 0; i--) {
-      startDelim = delimiters[i];
-      if (startDelim.marker !== 95 /* _ */ && startDelim.marker !== 42 /* * */) {
-        continue;
-      }
-      // Process only opening markers
-            if (startDelim.end === -1) {
-        continue;
-      }
-      endDelim = delimiters[startDelim.end];
-      // If the previous delimiter has the same marker and is adjacent to this one,
-      // merge those into one strong delimiter.
-      
-      // `<em><em>whatever</em></em>` -> `<strong>whatever</strong>`
-      
-            isStrong = i > 0 && delimiters[i - 1].end === startDelim.end + 1 && 
-      // check that first two markers match and adjacent
-      delimiters[i - 1].marker === startDelim.marker && delimiters[i - 1].token === startDelim.token - 1 && 
-      // check that last two markers are adjacent (we can safely assume they match)
-      delimiters[startDelim.end + 1].token === endDelim.token + 1;
-      ch = String.fromCharCode(startDelim.marker);
-      token = state.tokens[startDelim.token];
-      token.type = isStrong ? "strong_open" : "em_open";
-      token.tag = isStrong ? "strong" : "em";
-      token.nesting = 1;
-      token.markup = isStrong ? ch + ch : ch;
-      token.content = "";
-      token = state.tokens[endDelim.token];
-      token.type = isStrong ? "strong_close" : "em_close";
-      token.tag = isStrong ? "strong" : "em";
-      token.nesting = -1;
-      token.markup = isStrong ? ch + ch : ch;
-      token.content = "";
-      if (isStrong) {
-        state.tokens[delimiters[i - 1].token].content = "";
-        state.tokens[delimiters[startDelim.end + 1].token].content = "";
-        i--;
-      }
-    }
-  }
-  // Walk through delimiter list and replace text tokens with tags
-  
-    var postProcess_1 = function emphasis(state) {
-    var curr, tokens_meta = state.tokens_meta, max = state.tokens_meta.length;
-    postProcess(state, state.delimiters);
-    for (curr = 0; curr < max; curr++) {
-      if (tokens_meta[curr] && tokens_meta[curr].delimiters) {
-        postProcess(state, tokens_meta[curr].delimiters);
-      }
-    }
-  };
-  var emphasis = {
-    tokenize: tokenize,
-    postProcess: postProcess_1
   };
   var normalizeReference$1 = utils.normalizeReference;
   var isSpace$1 = utils.isSpace;
@@ -6389,67 +6547,98 @@
       if (title) {
         attrs.push([ "title", title ]);
       }
+      if ("imageCrossorigin" in state.md.options && /^(?:[-.+A-Za-z]+:|\/\/)/.test(href)) {
+        attrs.push([ "crossorigin", state.md.options.imageCrossorigin ]);
+      }
     }
     state.pos = pos;
     state.posMax = max;
     return true;
   };
-  // Process autolinks '<protocol:...>'
   /*eslint max-len:0*/  var EMAIL_RE = /^([a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)$/;
-  var AUTOLINK_RE = /^([a-zA-Z][a-zA-Z0-9+.\-]{1,31}):([^<>\x00-\x20]*)$/;
+  var AUTOLINK_RE = /^([a-zA-Z][a-zA-Z0-9+.\-]{1,31}):(\/*[^\/<>\x00-\x20][^<>\x00-\x20]*)$/;
+  var isWhiteSpace$1 = utils.isWhiteSpace, isPunctChar$1 = utils.isPunctChar;
+  function isAutolinkTrim(ch) {
+    return ch === 34 /* " */ || ch === 40 /* ( */ || ch === 41 /* ) */ || ch === 44 /* , */ || ch === 46 /* . */ || ch === 58 /* : */ || ch === 59 /* ; */ || ch === 33 /* ! */ || ch === 63 /* ? */;
+  }
   var autolink = function autolink(state, silent) {
-    var url, fullUrl, token, ch, start, max, pos = state.pos;
-    if (state.src.charCodeAt(pos) !== 60 /* < */) {
+    var url, fullUrl, token, ch, max, src = state.src, pos = state.pos, start, eatPending, type;
+    ch = src.charCodeAt(pos);
+    if (ch === 60 /* < */) {
+      type = 0;
+      start = pos += 1;
+      eatPending = 0;
+    } else if (ch === 58 /* : */ && state.md.options.hotcrp && pos >= 3 && (src.charCodeAt(pos + 1) === 47 /*/*/ || src.charCodeAt(pos - 1) === 111 /*o*/)) {
+      type = 1;
+      if (pos >= 4 && src.slice(pos - 4, pos + 3) === "http://") {
+        start = pos - 4;
+        pos += 3;
+      } else if (pos >= 5 && src.slice(pos - 5, pos + 3) === "https://") {
+        start = pos - 5;
+        pos += 3;
+      } else if (pos >= 3 && src.slice(pos - 3, pos + 3) === "ftp://") {
+        start = pos - 3;
+        pos += 3;
+      } else if (pos >= 6 && src.slice(pos - 6, pos) === "mailto") {
+        start = pos + 1;
+        pos += 1;
+        type = 2;
+      } else {
+        return false;
+      }
+      eatPending = state.pos - (type === 2 ? start - 7 : start);
+      if (!silent && state.pending.length < eatPending || start > 0 && !isWhiteSpace$1(src.charCodeAt(start - 1)) && !isPunctChar$1(src.charAt(start - 1))) {
+        return false;
+      }
+    } else {
       return false;
     }
-    start = state.pos;
     max = state.posMax;
-    for (;;) {
-      if (++pos >= max) return false;
-      ch = state.src.charCodeAt(pos);
-      if (ch === 60 /* < */) return false;
-      if (ch === 62 /* > */) break;
+    if (type === 0) {
+      while (pos !== max && (ch = src.charCodeAt(pos)) !== 60 /* < */ && ch !== 62 /* > */) {
+        ++pos;
+      }
+      if (pos === max || ch === 60) {
+        return false;
+      }
+    } else {
+      while (pos !== max && (ch = src.charCodeAt(pos)) !== 60 /* < */ && ch !== 62 /* > */ && ch !== 34 /* " */ && !isWhiteSpace$1(ch)) {
+        ++pos;
+      }
+      while (pos > start && isAutolinkTrim(src.charCodeAt(pos - 1))) {
+        --pos;
+      }
     }
-    url = state.src.slice(start + 1, pos);
-    if (AUTOLINK_RE.test(url)) {
+    if (pos === start) {
+      return false;
+    }
+    url = src.slice(start, pos);
+    if (type !== 2 && AUTOLINK_RE.test(url)) {
       fullUrl = state.md.normalizeLink(url);
-      if (!state.md.validateLink(fullUrl)) {
-        return false;
-      }
-      if (!silent) {
-        token = state.push("link_open", "a", 1);
-        token.attrs = [ [ "href", fullUrl ] ];
-        token.markup = "autolink";
-        token.info = "auto";
-        token = state.push("text", "", 0);
-        token.content = state.md.normalizeLinkText(url);
-        token = state.push("link_close", "a", -1);
-        token.markup = "autolink";
-        token.info = "auto";
-      }
-      state.pos += url.length + 2;
-      return true;
-    }
-    if (EMAIL_RE.test(url)) {
+    } else if (type !== 1 && EMAIL_RE.test(url)) {
       fullUrl = state.md.normalizeLink("mailto:" + url);
-      if (!state.md.validateLink(fullUrl)) {
-        return false;
-      }
-      if (!silent) {
-        token = state.push("link_open", "a", 1);
-        token.attrs = [ [ "href", fullUrl ] ];
-        token.markup = "autolink";
-        token.info = "auto";
-        token = state.push("text", "", 0);
-        token.content = state.md.normalizeLinkText(url);
-        token = state.push("link_close", "a", -1);
-        token.markup = "autolink";
-        token.info = "auto";
-      }
-      state.pos += url.length + 2;
-      return true;
+    } else {
+      return false;
     }
-    return false;
+    if (!state.md.validateLink(fullUrl)) {
+      return false;
+    }
+    if (!silent) {
+      if (eatPending) {
+        state.pending = state.pending.slice(0, state.pending.length - eatPending);
+      }
+      token = state.push("link_open", "a", 1);
+      token.attrs = [ [ "href", fullUrl ] ];
+      token.markup = "autolink";
+      token.info = "auto";
+      token = state.push("text", "", 0);
+      token.content = state.md.normalizeLinkText(url);
+      token = state.push("link_close", "a", -1);
+      token.markup = "autolink";
+      token.info = "auto";
+    }
+    state.pos = type === 0 ? pos + 1 : pos;
+    return true;
   };
   var HTML_TAG_RE = html_re.HTML_TAG_RE;
   function isLinkOpen(str) {
@@ -6534,7 +6723,7 @@
   };
   // For each opening emphasis-like marker find a matching closing one
     function processDelimiters(state, delimiters) {
-    var closerIdx, openerIdx, closer, opener, minOpenerIdx, newMinOpenerIdx, isOddMatch, lastJump, openersBottom = {}, max = delimiters.length;
+    var closerIdx, openerIdx, closer, opener, minOpenerIdx, newMinOpenerIdx, isOddMatch, lastJump, openersBottom = {}, max = delimiters.length, i, delim;
     if (!max) return;
     // headerIdx is the first delimiter of the current (where closer is) delimiter run
         var headerIdx = 0;
@@ -6614,6 +6803,14 @@
         openersBottom[closer.marker][(closer.open ? 3 : 0) + (closer.length || 0) % 3] = newMinOpenerIdx;
       }
     }
+    // Call delimiter pair functions in reverse order
+    
+        for (i = max - 1; i >= 0; i--) {
+      delim = delimiters[i];
+      if (delim.end !== -1 && delim.pairf) {
+        delim.pairf(state, delimiters, i);
+      }
+    }
   }
   var balance_pairs = function link_pairs(state) {
     var curr, tokens_meta = state.tokens_meta, max = state.tokens_meta.length;
@@ -6652,6 +6849,7 @@
   var isWhiteSpace = utils.isWhiteSpace;
   var isPunctChar = utils.isPunctChar;
   var isMdAsciiPunct = utils.isMdAsciiPunct;
+  var isCloseBracket = utils.isCloseBracket;
   function StateInline(src, md, env, outTokens) {
     this.src = src;
     this.env = env;
@@ -6676,6 +6874,8 @@
     // Counter used to disable inline linkify-it execution
     // inside <a> and markdown links
         this.linkLevel = 0;
+    // LaTeX escapes
+        this.latexEscapes = 0;
   }
   // Flush pending text
   
@@ -6757,6 +6957,9 @@
       can_open = left_flanking;
       can_close = right_flanking;
     }
+    if (can_open && isNextPunctChar && this.md.options.hotcrp && isCloseBracket(nextChar)) {
+      can_open = false;
+    }
     return {
       can_open: can_open,
       can_close: can_close,
@@ -6768,16 +6971,13 @@
   var state_inline = StateInline;
   ////////////////////////////////////////////////////////////////////////////////
   // Parser rules
-    var _rules = [ [ "text", text ], [ "linkify", linkify ], [ "newline", newline ], [ "escape", _escape ], [ "backticks", backticks ], [ "strikethrough", strikethrough.tokenize ], [ "emphasis", emphasis.tokenize ], [ "link", link ], [ "image", image ], [ "autolink", autolink ], [ "html_inline", html_inline ], [ "entity", entity ] ];
+    var _rules = [ [ "text", text ], [ "linkify", linkify ], [ "newline", newline ], [ "latex_escape", latex_escape ], [ "escape", _escape ], [ "math_inline", math_inline ], [ "backticks", backticks ], [ "strikethrough", strikethrough ], [ "emphasis", emphasis ], [ "link", link ], [ "image", image ], [ "autolink", autolink ], [ "html_inline", html_inline ], [ "entity", entity ] ];
   // `rule2` ruleset was created specifically for emphasis/strikethrough
   // post-processing and may be changed in the future.
   
   // Don't use this for anything except pairs (plugins working with `balance_pairs`).
   
-    var _rules2 = [ [ "balance_pairs", balance_pairs ], [ "strikethrough", strikethrough.postProcess ], [ "emphasis", emphasis.postProcess ], 
-  // rules for pairs separate '**' into its own text tokens, which may be left unused,
-  // rule below merges unused segments back with the rest of the text
-  [ "fragments_join", fragments_join ] ];
+    var _rules2 = [ [ "balance_pairs", balance_pairs ], [ "fragments_join", fragments_join ] ];
   /**
 	 * new ParserInline()
 	 **/  function ParserInline() {
@@ -7940,8 +8140,7 @@
         rules: [ "paragraph" ]
       },
       inline: {
-        rules: [ "text" ],
-        rules2: [ "balance_pairs", "fragments_join" ]
+        rules: [ "text" ]
       }
     }
   };
@@ -7981,8 +8180,51 @@
         rules: [ "blockquote", "code", "fence", "heading", "hr", "html_block", "lheading", "list", "reference", "paragraph" ]
       },
       inline: {
-        rules: [ "autolink", "backticks", "emphasis", "entity", "escape", "html_inline", "image", "link", "newline", "text" ],
-        rules2: [ "balance_pairs", "emphasis", "fragments_join" ]
+        rules: [ "autolink", "backticks", "emphasis", "entity", "escape", "html_inline", "image", "link", "newline", "text" ]
+      }
+    }
+  };
+  // markdown-it default options
+    var hotcrp = {
+    options: {
+      html: false,
+      // Enable HTML tags in source
+      xhtmlOut: false,
+      // Use '/' to close single tags (<br />)
+      breaks: false,
+      // Convert '\n' in paragraphs into <br>
+      langPrefix: "language-",
+      // CSS language prefix for fenced blocks
+      linkify: false,
+      // autoconvert URL-like texts to links
+      imageCrossorigin: null,
+      // add `crossorigin` attribute to cross-site <img>
+      // Enable some language-neutral replacements + quotes beautification
+      typographer: false,
+      // Turn on hotcrp-specific features
+      hotcrp: true,
+      // Double + single quotes replacement pairs, when typographer enabled,
+      // and smartquotes on. Could be either a String or an Array.
+      // For example, you can use '«»„“' for Russian, '„“‚‘' for German,
+      // and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).
+      quotes: "\u201c\u201d\u2018\u2019",
+      /* “”‘’ */
+      // Highlighter function. Should return escaped HTML,
+      // or '' if the source string is not changed and should be escaped externaly.
+      // If result starts with <pre... internal wrapper is skipped.
+      // function (/*str, lang*/) { return ''; }
+      highlight: null,
+      maxNesting: 100
+    },
+    components: {
+      core: {
+        rules: [ "normalize", "block", "inline", "text_join" ]
+      },
+      block: {
+        rules: [ "blockquote", "code", "fence", "heading", "hr", "html_block", "lheading", "list", "math_block", "paragraph", "reference", "table" ]
+      },
+      inline: {
+        rules: [ "autolink", "backticks", "emphasis", "entity", "escape", "html_inline", "image", "latex_escape", "link", "math_inline", "newline", "strikethrough", "text" ]
       }
     }
   };
@@ -7990,7 +8232,8 @@
   var config = {
     default: _default,
     zero: zero,
-    commonmark: commonmark
+    commonmark: commonmark,
+    hotcrp: hotcrp
   };
   ////////////////////////////////////////////////////////////////////////////////
   
@@ -8103,6 +8346,9 @@
 	 * - __langPrefix__ - `language-`. CSS language class prefix for fenced blocks.
 	 *   Can be useful for external highlighters.
 	 * - __linkify__ - `false`. Set `true` to autoconvert URL-like text to links.
+	 * - __hotcrp__ - `false`. Set `true` to prevent in-word emphasis
+	 *   (render `1*2*3` as `1*2*3`, not `1<em>2</em>3`) and restrict backticks
+	 *   (render ` ``foo'' bar ``baz'' ` as presented, not as ` <code>foo '' bar </code>baz'' `).
 	 * - __typographer__  - `false`. Set `true` to enable [some language-neutral
 	 *   replacement](https://github.com/markdown-it/markdown-it/blob/master/lib/rules_core/replacements.js) +
 	 *   quotes beautification (smartquotes).
