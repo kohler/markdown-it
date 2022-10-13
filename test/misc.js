@@ -522,6 +522,32 @@ describe('HotCRP', function () {
   });
 });
 
+describe('attributes option', function () {
+  var md = markdownit('hotcrp', { attributes: true });
+
+  it('Should support attributes on fenced blocks', function () {
+    assert.strictEqual(
+      md.render('```c++ {}\nWhatever\n```\n'),
+      '<pre><code class="language-c++">Whatever\n</code></pre>\n'
+    );
+
+    assert.strictEqual(
+      md.render('```c++ {.foo .bar}\nWhatever\n```\n'),
+      '<pre><code class="foo bar language-c++">Whatever\n</code></pre>\n'
+    );
+
+    assert.strictEqual(
+      md.render('```c++ {.foo #x}\nWhatever\n```\n'),
+      '<pre><code class="foo language-c++" id="x">Whatever\n</code></pre>\n'
+    );
+
+    assert.strictEqual(
+      md.render('``` {.foo data-x="f"}\nWhatever\n```\n'),
+      '<pre><code class="foo" data-x="f">Whatever\n</code></pre>\n'
+    );
+  });
+});
+
 
 describe('Token attributes', function () {
   it('.attrJoin', function () {
