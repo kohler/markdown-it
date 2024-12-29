@@ -14,7 +14,8 @@ export default function hr (state: StateBlock, startLine: number, endLine: numbe
   // Check hr marker
   if (marker !== 0x2A/* * */ &&
       marker !== 0x2D/* - */ &&
-      marker !== 0x5F/* _ */) {
+      marker !== 0x5F/* _ */ &&
+      (marker !== 0x3D/* = */ || !state.md.options.hotcrp)) {
     return false
   }
 
@@ -35,7 +36,7 @@ export default function hr (state: StateBlock, startLine: number, endLine: numbe
 
   const token = state.push('hr', 'hr', 0)
   token.map = [startLine, state.line]
-  token.markup = Array(cnt + 1).join(String.fromCharCode(marker))
+  token.markup = String.fromCharCode(marker).repeat(cnt)
 
   return true
 }
