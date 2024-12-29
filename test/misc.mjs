@@ -486,6 +486,13 @@ describe('HotCRP', function () {
       '<a href="mailto:fart@barf.org">fart@barf.org</a></p>\n'
     )
   })
+
+  it('Should handle === thematic breaks', function () {
+    assert.strictEqual(
+      md.render('=========\nHello\n========\n\nHi\n===\nP'),
+      '<hr>\n<h1>Hello</h1>\n<h1>Hi</h1>\n<p>P</p>\n'
+    )
+  })
 })
 
 describe('Token attributes', function () {
