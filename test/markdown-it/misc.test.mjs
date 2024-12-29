@@ -439,6 +439,43 @@ describe('HotCRP', function () {
       '<p>(*) &quot;Due to lack of knowledge of traffic patterns ...&quot; To solve this, I would recommend reading IMC\'09 paper from Srikanth Kandula\n(*) Another topology to concern is the InternetZoo topology.</p>\n'
     )
   })
+
+  it('Should parse math blocks', function () {
+    assert.strictEqual(
+      md.render('$$ fart $$'),
+      '<div class="math">fart</div>\n'
+    )
+    assert.strictEqual(
+      md.render('> $$\n>   \\array{1}{2}\n> $$\n> $$  foo bar baz $$'),
+      '<blockquote>\n<div class="math">\\array{1}{2}</div>\n<div class="math">foo bar baz</div>\n</blockquote>\n'
+    )
+  })
+
+  it('Should parse inline math', function () {
+    assert.strictEqual(
+      md.render('A $fart$ B'),
+      '<p>A <span class="math">fart</span> B</p>\n'
+    )
+    assert.strictEqual(
+      md.render('$fart$ B'),
+      '<p><span class="math">fart</span> B</p>\n'
+    )
+    assert.strictEqual(
+      md.render('O($2^n$)'),
+      '<p>O(<span class="math">2^n</span>)</p>\n'
+    )
+    assert.strictEqual(
+      md.render('O($n$)'),
+      '<p>O(<span class="math">n</span>)</p>\n'
+    )
+  })
+
+  it('Should parse complex math', function () {
+    assert.strictEqual(
+      md.render('In multi-Paxos, leaders send DECIDE messages after receiving\nACKs. But they may safely send DECIDE messages at other times, too, as long as\nthe contents of the DECIDE messages are OK.\n\nSo assume a leader $$\\ell$$ wants to send a $$\\langle \\text{DECIDE}, R, W\n\\rangle$$ message to all servers at the start of its leadership term,\nimmediately after receiving a quorum of PREPARE messages. How can the leader\nsafely compute $$R$$ and $$W$$?\n\nYou may refer to the leader’s state variables, as well as to the\n$$\\textit{ar}_j$$ and $$\\textit{AV}_j$$ values received in the PREPARE quorum.\nYour answer must not break consensus. For full credit, in some situations the\nnew DECIDEs should cause some servers to send Nancy-messages sooner than they\nwould have otherwise.\n\n$$\\sum_0^\\infty f(x)$$\n'),
+      '<p>In multi-Paxos, leaders send DECIDE messages after receiving\nACKs. But they may safely send DECIDE messages at other times, too, as long as\nthe contents of the DECIDE messages are OK.</p>\n<p>So assume a leader <span class="math">\\ell</span> wants to send a <span class="math">\\langle \\text{DECIDE}, R, W\n\\rangle</span> message to all servers at the start of its leadership term,\nimmediately after receiving a quorum of PREPARE messages. How can the leader\nsafely compute <span class="math">R</span> and <span class="math">W</span>?</p>\n<p>You may refer to the leader’s state variables, as well as to the\n<span class="math">\\textit{ar}_j</span> and <span class="math">\\textit{AV}_j</span> values received in the PREPARE quorum.\nYour answer must not break consensus. For full credit, in some situations the\nnew DECIDEs should cause some servers to send Nancy-messages sooner than they\nwould have otherwise.</p>\n<div class="math">\\sum_0^\\infty f(x)</div>\n'
+    )
+  })
 })
 
 describe('Token attributes', function () {
