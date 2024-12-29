@@ -423,7 +423,7 @@ describe('Ordered list info', function () {
 })
 
 describe('HotCRP', function () {
-  const md = markdownit({ hotcrp: true })
+  const md = markdownit('hotcrp')
 
   it('Should handle a missing backtick', function () {
     assert.strictEqual(
@@ -496,6 +496,20 @@ describe('HotCRP', function () {
     assert.strictEqual(
       md.render('=========\nHello' + ' Hello'.repeat(20) + '\n========\n\nHi\n===\nP'),
       '<hr>\n<p>Hello' + ' Hello'.repeat(20) + '</p>\n<hr>\n<h1>Hi</h1>\n<p>P</p>\n'
+    )
+  })
+
+  it('Should handle LaTeX escapes', function () {
+    assert.strictEqual(
+      md.render('\\emph{This is a \\textbf{test}. $f$}'),
+      '<p><em>This is a <strong>test</strong>. <span class="math">f</span></em></p>\n'
+    )
+  })
+
+  it('Should handle LaTeX escapes containing braces', function () {
+    assert.strictEqual(
+      md.render('\\emph{This is a \\textbf{te{s}t}. $f$}'),
+      '<p><em>This is a <strong>te{s}t</strong>. <span class="math">f</span></em></p>\n'
     )
   })
 })
