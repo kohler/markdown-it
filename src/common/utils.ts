@@ -247,6 +247,11 @@ function isMdAsciiPunct (ch: number) {
   }
 }
 
+/** Returns true for close brackets `)`, `]`, and `}`. */
+function isCloseBracket (ch: number) {
+  return ch === 0x29/* ) */ || ch === 0x5D/* ] */ || ch === 0x7D/* } */
+}
+
 /** Normalizes `[reference labels]` for case-insensitive lookup. */
 function normalizeReference (str: string) {
   // Trim and collapse whitespace
@@ -332,6 +337,7 @@ export {
   isMdAsciiPunct,
   isPunctChar,
   isPunctCharCode,
+  isCloseBracket,
   escapeRE,
   normalizeReference,
   asciiTrim

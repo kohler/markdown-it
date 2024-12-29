@@ -1,5 +1,5 @@
 import Token from '../token.ts'
-import { isWhiteSpace, isPunctCharCode, isMdAsciiPunct } from '../common/utils.ts'
+import { isWhiteSpace, isPunctCharCode, isMdAsciiPunct, isCloseBracket } from '../common/utils.ts'
 import type MarkdownIt from '../markdownit.ts'
 import type { Delimiter, Env } from '../types.ts'
 
@@ -171,7 +171,10 @@ class StateInline {
     const right_flanking =
       !isLastWhiteSpace && (!isLastPunctChar || isNextWhiteSpace || isNextPunctChar)
 
-    const can_open = left_flanking && (canSplitWord || !right_flanking || isLastPunctChar)
+    let can_open = left_flanking && (canSplitWord || !right_flanking || isLastPunctChar)
+    if (can_open && isNextPunctChar && this.md.options.hotcrp && isCloseBracket(nextChar)) {
+      can_open = false
+    }
     const can_close = right_flanking && (canSplitWord || !left_flanking || isNextPunctChar)
 
     return { can_open, can_close, length: count }
