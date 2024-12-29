@@ -13,7 +13,8 @@ function skipBulletListMarker (state: StateBlock, startLine: number) {
   // Check bullet
   if (marker !== 0x2A/* * */ &&
       marker !== 0x2D/* - */ &&
-      marker !== 0x2B/* + */) {
+      marker !== 0x2B/* + */ &&
+      (marker !== 0x2022/* • */ || !state.md.options.hotcrp)) {
     return -1
   }
 
