@@ -438,6 +438,36 @@ describe('HotCRP', function () {
       '<p>(*) &quot;Due to lack of knowledge of traffic patterns ...&quot; To solve this, I would recommend reading IMC\'09 paper from Srikanth Kandula\n(*) Another topology to concern is the InternetZoo topology.</p>\n'
     )
   })
+
+  it('Should parse math blocks', function () {
+    assert.strictEqual(
+      md.render('$$ fart $$'),
+      '<div class="math">fart</div>\n'
+    )
+    assert.strictEqual(
+      md.render('> $$\n>   \\array{1}{2}\n> $$\n> $$  foo bar baz $$'),
+      '<blockquote>\n<div class="math">\\array{1}{2}</div>\n<div class="math">foo bar baz</div>\n</blockquote>\n'
+    )
+  })
+
+  it('Should parse inline math', function () {
+    assert.strictEqual(
+      md.render('A $fart$ B'),
+      '<p>A <span class="math">fart</span> B</p>\n'
+    )
+    assert.strictEqual(
+      md.render('$fart$ B'),
+      '<p><span class="math">fart</span> B</p>\n'
+    )
+    assert.strictEqual(
+      md.render('O($2^n$)'),
+      '<p>O(<span class="math">2^n</span>)</p>\n'
+    )
+    assert.strictEqual(
+      md.render('O($n$)'),
+      '<p>O(<span class="math">n</span>)</p>\n'
+    )
+  })
 })
 
 describe('Token attributes', function () {
