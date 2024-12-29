@@ -83,6 +83,14 @@ export interface MarkdownItOptions {
   linkify?: boolean
 
   /**
+   * Prevent in-word emphasis (render `1*2*3` as `1*2*3`, not
+   * `1<em>2</em>3`).
+   *
+   * @defaultValue `false`
+   */
+  hotcrp?: boolean
+
+  /**
    * Enable language-neutral replacements and quotes beautification.
    *
    * See the [replacement rules](https://github.com/markdown-it/markdown-it/blob/master/src/rules_core/replacements.ts)

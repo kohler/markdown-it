@@ -19,6 +19,9 @@ const options: Required<MarkdownItOptions> = {
   // autoconvert URL-like texts to links
   linkify: false,
 
+  // prevent in-word emphasis
+  hotcrp: false,
+
   // Enable some language-neutral replacements + quotes beautification
   typographer: false,
 

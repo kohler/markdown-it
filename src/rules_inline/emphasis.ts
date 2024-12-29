@@ -14,7 +14,7 @@ function emphasis_tokenize (state: StateInline, silent: boolean): boolean {
 
   if (marker !== 0x5F /* _ */ && marker !== 0x2A /* * */) { return false }
 
-  const scanned = state.scanDelims(state.pos, marker === 0x2A)
+  const scanned = state.scanDelims(state.pos, marker === 0x2A && !state.md.options.hotcrp)
 
   for (let i = 0; i < scanned.length; i++) {
     const token = state.push('text', '', 0)
