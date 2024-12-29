@@ -8,6 +8,7 @@ import r_table from './rules_block/table.ts'
 import r_code from './rules_block/code.ts'
 import r_fence from './rules_block/fence.ts'
 import r_blockquote from './rules_block/blockquote.ts'
+import r_math_block from './rules_block/math_block.ts'
 import r_hr from './rules_block/hr.ts'
 import r_list from './rules_block/list.ts'
 import r_reference from './rules_block/reference.ts'
@@ -27,6 +28,7 @@ const _rules: Array<[
   ['code', r_code],
   ['fence', r_fence, ['paragraph', 'reference', 'blockquote', 'list']],
   ['blockquote', r_blockquote, ['paragraph', 'reference', 'blockquote', 'list']],
+  ['math_block', r_math_block, ['paragraph', 'reference', 'blockquote', 'list']],
   ['hr', r_hr, ['paragraph', 'reference', 'blockquote', 'list']],
   ['list', r_list, ['paragraph', 'reference', 'blockquote']],
   ['reference', r_reference],

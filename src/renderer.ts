@@ -137,6 +137,13 @@ default_rules.html_inline = function (tokens: Token[], idx: number): string {
   return tokens[idx].content
 }
 
+default_rules.math_inline = function (tokens: Token[], idx: number): string {
+  return `<span class="math">${escapeHtml(tokens[idx].content)}</span>`
+}
+default_rules.math_block = function (tokens: Token[], idx: number): string {
+  return `<div class="math">${escapeHtml(tokens[idx].content)}</div>\n`
+}
+
 /**
  * Generates HTML from parsed token stream. Each instance has independent
  * copy of rules. Those can be rewritten with ease. Also, you can add new
