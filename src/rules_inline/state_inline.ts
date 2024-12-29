@@ -45,6 +45,9 @@ class StateInline {
   // inside <a> and markdown links
   linkLevel = 0
 
+  // LaTeX escape markers
+  latexEscapes: boolean[] | null = null
+
   // List of emphasis-like delimiters for current tag
   delimiters: Delimiter[] = []
 

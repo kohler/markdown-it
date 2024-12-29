@@ -18,8 +18,11 @@ export interface Env {
 
 /** Delimiter entry used by emphasis-like inline rules. */
 export interface Delimiter {
-  /** Char code of the starting marker. */
-  marker: number
+  /**
+   * Char code of the starting marker, or a string for markers that are not
+   * single characters (e.g. `'latex'` for LaTeX escapes).
+   */
+  marker: number | string
 
   /** Total length of this series of delimiters. */
   length?: number

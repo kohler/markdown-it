@@ -84,6 +84,7 @@ export default {
         'escape',
         'html_inline',
         'image',
+        'latex_escape',
         'link',
         'math_inline',
         'newline',

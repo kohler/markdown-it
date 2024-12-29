@@ -7,6 +7,7 @@ import type { Env } from './types.ts'
 import r_text from './rules_inline/text.ts'
 import r_linkify from './rules_inline/linkify.ts'
 import r_newline from './rules_inline/newline.ts'
+import r_latex_escape from './rules_inline/latex_escape.ts'
 import r_escape from './rules_inline/escape.ts'
 import r_math_inline from './rules_inline/math_inline.ts'
 import r_backticks from './rules_inline/backticks.ts'
@@ -30,6 +31,7 @@ const _rules: Array<[
   ['text', r_text],
   ['linkify', r_linkify],
   ['newline', r_newline],
+  ['latex_escape', r_latex_escape],
   ['escape', r_escape],
   ['math_inline', r_math_inline],
   ['backticks', r_backticks],

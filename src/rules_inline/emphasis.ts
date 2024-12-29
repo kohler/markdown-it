@@ -21,7 +21,7 @@ function processEmphasisPair (state: StateInline, delimiters: Delimiter[], i: nu
              // check that last two markers are adjacent (we can safely assume they match)
              delimiters[startDelim.end + 1].token === endDelim.token + 1
 
-  const ch = String.fromCharCode(startDelim.marker)
+  const ch = String.fromCharCode(startDelim.marker as number)
 
   const token_o = state.tokens[startDelim.token]
   token_o.type = isStrong ? 'strong_open' : 'em_open'
@@ -53,6 +53,8 @@ export default function emphasis (state: StateInline, silent: boolean): boolean 
   if (silent) { return false }
 
   if (marker !== 0x5F /* _ */ && marker !== 0x2A /* * */) { return false }
+
+  if (state.latexEscapes) { return false }
 
   const scanned = state.scanDelims(state.pos, marker === 0x2A && !state.md.options.hotcrp)
 

@@ -5,7 +5,7 @@ import type { Delimiter } from '../types.ts'
 import type StateInline from './state_inline.ts'
 
 function processDelimiters (state: StateInline, delimiters: Delimiter[]) {
-  const openersBottom: Record<number, number[]> = {}
+  const openersBottom: Record<number | string, number[]> = {}
   const max = delimiters.length
 
   if (!max) return
