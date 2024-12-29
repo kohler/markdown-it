@@ -431,6 +431,13 @@ describe('HotCRP', function () {
       '<p><code>a</code>, `b, <code>c</code>, <code>d</code></p>\n'
     )
   })
+
+  it('Should not create emphasis starting with a close bracket', function () {
+    assert.strictEqual(
+      md.render('(*) "Due to lack of knowledge of traffic patterns ..." To solve this, I would recommend reading IMC\'09 paper from Srikanth Kandula\n(*) Another topology to concern is the InternetZoo topology.'),
+      '<p>(*) &quot;Due to lack of knowledge of traffic patterns ...&quot; To solve this, I would recommend reading IMC\'09 paper from Srikanth Kandula\n(*) Another topology to concern is the InternetZoo topology.</p>\n'
+    )
+  })
 })
 
 describe('Token attributes', function () {
