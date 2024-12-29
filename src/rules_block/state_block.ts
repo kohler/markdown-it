@@ -214,7 +214,7 @@ class StateBlock {
       if (lineIndent > indent) {
         // partially expanding tabs in code blocks, e.g '\t\tfoobar'
         // with indent=2 becomes '  \tfoobar'
-        queue[i] = new Array(lineIndent - indent + 1).join(' ') + this.src.slice(first, last)
+        queue[i] = ' '.repeat(lineIndent - indent) + this.src.slice(first, last)
       } else {
         queue[i] = this.src.slice(first, last)
       }
