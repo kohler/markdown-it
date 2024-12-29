@@ -190,7 +190,12 @@ class Renderer {
     result = ''
 
     for (i = 0, l = token.attrs.length; i < l; i++) {
-      result += ` ${escapeHtml(token.attrs[i][0])}="${escapeHtml(String(token.attrs[i][1]))}"`
+      const a = token.attrs[i]
+      if (a[1] != null) {
+        result += ` ${escapeHtml(a[0])}="${escapeHtml(String(a[1]))}"`
+      } else {
+        result += ` ${escapeHtml(a[0])}`
+      }
     }
 
     return result

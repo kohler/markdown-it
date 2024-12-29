@@ -4,7 +4,7 @@
 type TokenNesting = -1 | 0 | 1
 
 /** @inline */
-type TokenAttribute = [name: string, value: string | number]
+type TokenAttribute = [name: string, value: string | number | null]
 
 /**
  * Represents one item in the parsed token stream, storing parsed data and
@@ -121,8 +121,9 @@ class Token {
 
   /**
    * Set `name` attribute to `value`. Override old value if exists.
+   * A `null` value renders as an attribute without a value.
    */
-  attrSet (name: string, value: string | number): void {
+  attrSet (name: string, value: string | number | null): void {
     const idx = this.attrIndex(name)
     const attrData: TokenAttribute = [name, value]
 
