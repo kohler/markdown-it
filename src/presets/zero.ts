@@ -68,10 +68,6 @@ export default {
     inline: {
       rules: [
         'text'
-      ],
-      rules2: [
-        'balance_pairs',
-        'fragments_join'
       ]
     }
   }

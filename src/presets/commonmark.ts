@@ -85,11 +85,6 @@ export default {
         'link',
         'newline',
         'text'
-      ],
-      rules2: [
-        'balance_pairs',
-        'emphasis',
-        'fragments_join'
       ]
     }
   }

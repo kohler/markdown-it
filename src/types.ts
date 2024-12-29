@@ -1,3 +1,5 @@
+import type StateInline from './rules_inline/state_inline.ts'
+
 /** @inline */
 export interface Reference {
   title: string
@@ -39,6 +41,13 @@ export interface Delimiter {
 
   /** One delimiter represents two characters. */
   jump?: number
+
+  /**
+   * Function called on matched opening delimiters, in reverse order, after
+   * pairs are balanced. Arguments are the inline state, the delimiter list,
+   * and the index of this delimiter in that list.
+   */
+  pairf?: ((state: StateInline, delimiters: Delimiter[], i: number) => void) | null
 }
 
 /**

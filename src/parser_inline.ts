@@ -33,8 +33,8 @@ const _rules: Array<[
   ['escape', r_escape],
   ['math_inline', r_math_inline],
   ['backticks', r_backticks],
-  ['strikethrough', r_strikethrough.tokenize],
-  ['emphasis', r_emphasis.tokenize],
+  ['strikethrough', r_strikethrough],
+  ['emphasis', r_emphasis],
   ['link', r_link],
   ['image', r_image],
   ['autolink', r_autolink],
@@ -52,10 +52,6 @@ const _rules2: Array<[
   rule: (state: StateInline) => void
 ]> = [
   ['balance_pairs', r_balance_pairs],
-  ['strikethrough', r_strikethrough.postProcess],
-  ['emphasis', r_emphasis.postProcess],
-  // rules for pairs separate '**' into its own text tokens, which may be left unused,
-  // rule below merges unused segments back with the rest of the text
   ['fragments_join', r_fragments_join]
 ]
 

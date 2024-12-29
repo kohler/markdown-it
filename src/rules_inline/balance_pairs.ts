@@ -4,7 +4,7 @@
 import type { Delimiter } from '../types.ts'
 import type StateInline from './state_inline.ts'
 
-function processDelimiters (delimiters: Delimiter[]) {
+function processDelimiters (state: StateInline, delimiters: Delimiter[]) {
   const openersBottom: Record<number, number[]> = {}
   const max = delimiters.length
 
@@ -111,18 +111,27 @@ function processDelimiters (delimiters: Delimiter[]) {
       openersBottom[closer.marker][(closer.open ? 3 : 0) + ((closer.length || 0) % 3)] = newMinOpenerIdx
     }
   }
+
+  // Call delimiter pair functions in reverse order
+  //
+  for (let i = max - 1; i >= 0; i--) {
+    const delim = delimiters[i]
+    if (delim.end !== -1 && delim.pairf) {
+      delim.pairf(state, delimiters, i)
+    }
+  }
 }
 
 export default function link_pairs (state: StateInline): void {
   const tokens_meta = state.tokens_meta
   const max = state.tokens_meta.length
 
-  processDelimiters(state.delimiters)
+  processDelimiters(state, state.delimiters)
 
   for (let curr = 0; curr < max; curr++) {
     const delimiters = tokens_meta[curr]?.delimiters
     if (delimiters) {
-      processDelimiters(delimiters)
+      processDelimiters(state, delimiters)
     }
   }
 }
