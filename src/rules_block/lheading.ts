@@ -64,13 +64,37 @@ export default function lheading (state: StateBlock, startLine: number, endLine:
     return false
   }
 
+  if (startLine + 1 !== nextLine && state.md.options.hotcrp) {
+    // only one-line headings allowed
+    state.parentType = oldParentType
+    return false
+  }
+
   const content = asciiTrim(state.getLines(startLine, nextLine, state.blkIndent, false))
+
+  if (content.length > 60 &&
+      state.md.options.hotcrp &&
+      (nextLine + 1 === endLine ||
+       (state.lastSetext &&
+        state.lastSetext.type === 'hr' &&
+        state.sCount[nextLine] === state.sCount[state.lastSetext.map![0]] &&
+        state.lastSetext.markup.charCodeAt(0) === marker))) {
+    // do not end on a suspicious heading
+    state.parentType = oldParentType
+    return false
+  }
 
   state.line = nextLine + 1
 
   const token_o = state.push('heading_open', `h${level}`, 1)
   token_o.markup = String.fromCharCode(marker!)
   token_o.map = [startLine, state.line]
+  if (!state.lastSetext ||
+      state.lastSetext.type !== 'hr' ||
+      state.sCount[nextLine] !== state.sCount[state.lastSetext.map![0]] ||
+      state.lastSetext.markup.charCodeAt(0) !== marker) {
+    state.lastSetext = token_o
+  }
 
   const token_i = state.push('inline', '', 0)
   token_i.content = content

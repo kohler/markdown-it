@@ -36,6 +36,7 @@ class StateBlock {
   lineMax = 0 // lines count
   tight = false // loose/tight mode for lists
   listIndent = -1 // indent of the current list block (-1 if there isn't any)
+  lastSetext: Token | null = null // last setext heading or hr
 
   // can be 'blockquote', 'list', 'root', 'paragraph' or 'reference'
   // used in lists to determine if they interrupt a paragraph
