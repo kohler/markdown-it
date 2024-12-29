@@ -84,7 +84,9 @@ export interface MarkdownItOptions {
 
   /**
    * Prevent in-word emphasis (render `1*2*3` as `1*2*3`, not
-   * `1<em>2</em>3`).
+   * `1<em>2</em>3`) and restrict backticks (render
+   * ` ``foo'' bar ``baz'' ` as presented, not as
+   * ` <code>foo '' bar </code>baz'' `).
    *
    * @defaultValue `false`
    */

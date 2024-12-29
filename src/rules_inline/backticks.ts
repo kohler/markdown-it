@@ -1,6 +1,7 @@
 // Parse backticks
 
 import type StateInline from './state_inline.ts'
+import { isWhiteSpace } from '../common/utils.ts'
 
 // Position of the last backtick run of each length. Derived from the string in
 // one pass, so unlike an incremental cache it never depends on how the parser
@@ -51,6 +52,14 @@ export default function backtick (state: StateInline, silent: boolean): boolean 
       if (matchEnd > max) break
 
       if (matchEnd - matchStart === openerLength) {
+        // Check for matching spaces.
+        if (openerLength <= 2 &&
+            state.md.options.hotcrp &&
+            isWhiteSpace(state.src.charCodeAt(matchStart - 1)) !==
+               isWhiteSpace(state.src.charCodeAt(pos))) {
+          break
+        }
+        // Found matching closer length.
         if (!silent) {
           const token = state.push('code_inline', 'code', 0)
           token.markup = marker
