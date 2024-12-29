@@ -21,6 +21,9 @@ const options: Required<MarkdownItOptions> = {
   // Enable HotCRP-specific features
   hotcrp: false,
 
+  // Add `crossorigin` attribute to cross-site <img>
+  imageCrossorigin: false,
+
   // Enable some language-neutral replacements + quotes beautification
   typographer: false,
 

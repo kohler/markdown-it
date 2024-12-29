@@ -125,13 +125,18 @@ export default function image (state: StateInline, silent: boolean): boolean {
     )
 
     const token = state.push('image', 'img', 0)
-    const attrs: Array<[string, string]> = [['src', href], ['alt', '']]
+    const attrs: Array<[string, string | null]> = [['src', href], ['alt', '']]
     token.attrs = attrs
     token.children = tokens
     token.content = content
 
     if (title) {
       attrs.push(['title', title])
+    }
+    const crossorigin = state.md.options.imageCrossorigin
+    if (crossorigin !== undefined && crossorigin !== false &&
+        /^(?:[-.+A-Za-z]+:|\/\/)/.test(href)) {
+      attrs.push(['crossorigin', crossorigin])
     }
     if (label) {
       const meta: Record<string, unknown> = Object.create(null)

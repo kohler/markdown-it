@@ -105,6 +105,15 @@ export interface MarkdownItOptions {
   hotcrp?: boolean
 
   /**
+   * Add a `crossorigin` attribute to cross-site images (those whose `src`
+   * has a scheme or starts with `//`). `null` adds a bare `crossorigin`
+   * attribute; a string adds `crossorigin="<value>"`.
+   *
+   * @defaultValue `false` (`null` for `'hotcrp'` preset)
+   */
+  imageCrossorigin?: string | null | false
+
+  /**
    * Enable language-neutral replacements and quotes beautification.
    *
    * See the [replacement rules](https://github.com/markdown-it/markdown-it/blob/master/src/rules_core/replacements.ts)

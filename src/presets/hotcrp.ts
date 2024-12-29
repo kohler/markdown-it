@@ -18,6 +18,9 @@ const options: Required<MarkdownItOptions> = {
   // autoconvert URL-like texts to links
   linkify: false,
 
+  // Add `crossorigin` attribute to cross-site <img>
+  imageCrossorigin: null,
+
   // Enable some language-neutral replacements + quotes beautification
   typographer: false,
 
