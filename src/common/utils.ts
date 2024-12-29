@@ -158,6 +158,17 @@ function isSpace (code: number) {
   return false
 }
 
+/** Checks whether a character code is a space, tab, or nonbreaking space. */
+function isSpaceNB (code: number) {
+  switch (code) {
+    case 0x09:
+    case 0x20:
+    case 0xA0:
+      return true
+  }
+  return false
+}
+
 /**
  * Checks whether a character code is whitespace recognized by Markdown.
  *
@@ -333,6 +344,7 @@ export {
   escapeHtml,
   arrayReplaceAt,
   isSpace,
+  isSpaceNB,
   isWhiteSpace,
   isMdAsciiPunct,
   isPunctChar,

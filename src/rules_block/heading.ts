@@ -1,6 +1,6 @@
 // heading (#, ##, ...)
 
-import { isSpace, asciiTrim } from '../common/utils.ts'
+import { isSpace, isSpaceNB, asciiTrim } from '../common/utils.ts'
 import type StateBlock from './state_block.ts'
 
 export default function heading (state: StateBlock, startLine: number, endLine: number, silent: boolean): boolean {
@@ -22,7 +22,8 @@ export default function heading (state: StateBlock, startLine: number, endLine: 
     ch = state.src.charCodeAt(++pos)
   }
 
-  if (level > 6 || (pos < max && !isSpace(ch))) { return false }
+  const issp = state.md.options.hotcrp ? isSpaceNB : isSpace
+  if (level > 6 || (pos < max && !issp(ch))) { return false }
 
   if (silent) { return true }
 
@@ -30,7 +31,7 @@ export default function heading (state: StateBlock, startLine: number, endLine: 
 
   max = state.skipSpacesBack(max, pos)
   const tmp = state.skipCharsBack(max, 0x23, pos) // #
-  if (tmp > pos && isSpace(state.src.charCodeAt(tmp - 1))) {
+  if (tmp > pos && issp(state.src.charCodeAt(tmp - 1))) {
     max = tmp
   }
 
@@ -41,7 +42,9 @@ export default function heading (state: StateBlock, startLine: number, endLine: 
   token_o.map = [startLine, state.line]
 
   const token_i = state.push('inline', '', 0)
-  token_i.content = asciiTrim(state.src.slice(pos, max))
+  const content = state.src.slice(pos, max)
+  // hotcrp: also trim nonbreaking spaces
+  token_i.content = state.md.options.hotcrp ? content.trim() : asciiTrim(content)
   token_i.map = [startLine, state.line]
   token_i.children = []
 
