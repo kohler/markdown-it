@@ -422,6 +422,17 @@ describe('Ordered list info', function () {
   })
 })
 
+describe('HotCRP', function () {
+  const md = markdownit({ hotcrp: true })
+
+  it('Should handle a missing backtick', function () {
+    assert.strictEqual(
+      md.render('`a`, `b, `c`, `d`'),
+      '<p><code>a</code>, `b, <code>c</code>, <code>d</code></p>\n'
+    )
+  })
+})
+
 describe('Token attributes', function () {
   it('.attrJoin', function () {
     const md = markdownit()
