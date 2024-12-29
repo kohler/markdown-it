@@ -18,12 +18,14 @@ import punycode from 'punycode.js'
 import cfg_default from './presets/default.ts'
 import cfg_zero from './presets/zero.ts'
 import cfg_commonmark from './presets/commonmark.ts'
+import cfg_hotcrp from './presets/hotcrp.ts'
 import type { Env, MarkdownItOptions } from './types.ts'
 
 const config = {
   default: cfg_default,
   zero: cfg_zero,
-  commonmark: cfg_commonmark
+  commonmark: cfg_commonmark,
+  hotcrp: cfg_hotcrp
 }
 
 type MarkdownItPresetName = keyof typeof config
