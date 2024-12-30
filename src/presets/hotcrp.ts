@@ -56,7 +56,6 @@ export default {
 
     core: {
       rules: [
-        'normalize',
         'block',
         'strip_references',
         'inline',
@@ -94,6 +93,7 @@ export default {
         'link',
         'math_inline',
         'newline',
+        'special',
         'strikethrough',
         'text'
       ]

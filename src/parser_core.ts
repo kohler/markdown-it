@@ -1,7 +1,6 @@
 import Ruler from './ruler.ts'
 import StateCore from './rules_core/state_core.ts'
 
-import r_normalize from './rules_core/normalize.ts'
 import r_block from './rules_core/block.ts'
 import r_strip_references from './rules_core/strip_references.ts'
 import r_inline from './rules_core/inline.ts'
@@ -14,7 +13,6 @@ const _rules: Array<[
   name: string,
   rule: (state: StateCore) => void
 ]> = [
-  ['normalize', r_normalize],
   ['block', r_block],
   ['strip_references', r_strip_references],
   ['inline', r_inline],

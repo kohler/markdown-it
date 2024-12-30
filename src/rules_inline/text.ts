@@ -12,6 +12,7 @@ import type StateInline from './state_inline.ts'
 // http://spec.commonmark.org/0.15/#ascii-punctuation-character
 function isTerminatorChar (ch: number) {
   switch (ch) {
+    case 0x00:
     case 0x0A/* \n */:
     case 0x0D/* \r */:
     case 0x21/* ! */:
@@ -67,7 +68,7 @@ export default function text (state: StateInline, silent: boolean): boolean {
 // flexibility required.
 
 /*
-var TERMINATOR_RE = /[\r\n!#$%&*+\-:<=>@[\\\]^_`{}~]/;
+var TERMINATOR_RE = /[\0\r\n!#$%&*+\-:<=>@[\\\]^_`{}~]/;
 
 module.exports = function text(state, silent) {
   var pos = state.pos,

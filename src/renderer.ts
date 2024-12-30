@@ -129,6 +129,15 @@ default_rules.softbreak = function (
 default_rules.text = function (tokens: Token[], idx: number): string {
   return escapeHtml(tokens[idx].content)
 }
+default_rules.text_special = function (
+  tokens: Token[],
+  idx: number,
+  options: Required<MarkdownItOptions>,
+  env: Env | undefined,
+  slf: Renderer
+): string {
+  return slf.rules.text(tokens, idx, options, env, slf)
+}
 
 default_rules.html_block = function (tokens: Token[], idx: number): string {
   return tokens[idx].content
@@ -306,6 +315,7 @@ class Renderer {
     for (let i = 0, len = tokens.length; i < len; i++) {
       switch (tokens[i].type) {
         case 'text':
+        case 'text_special':
         case 'code_inline':
           // code content is added as plain text, without backticks
           result += tokens[i].content

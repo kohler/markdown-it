@@ -37,6 +37,8 @@ export default function escape (state: StateInline, silent: boolean): boolean {
 
     state.pos = pos
     return true
+  } else if (ch1 === 0) {
+    return false
   }
 
   // '\' before a space is a literal backslash. Don't consume the space, so a

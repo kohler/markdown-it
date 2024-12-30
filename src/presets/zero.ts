@@ -57,7 +57,6 @@ export default {
 
     core: {
       rules: [
-        'normalize',
         'block',
         'strip_references',
         'inline',
@@ -73,6 +72,7 @@ export default {
 
     inline: {
       rules: [
+        'special',
         'text'
       ]
     }

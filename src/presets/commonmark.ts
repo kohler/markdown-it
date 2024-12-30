@@ -56,7 +56,6 @@ export default {
 
     core: {
       rules: [
-        'normalize',
         'block',
         'strip_references',
         'inline',
@@ -90,6 +89,7 @@ export default {
         'image',
         'link',
         'newline',
+        'special',
         'text'
       ]
     }
