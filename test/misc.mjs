@@ -207,6 +207,12 @@ describe('Misc', function () {
     assert.strictEqual(md.render('foo\u0000bar'), '<p>foo\uFFFDbar</p>\n')
   })
 
+  it('Should replace escaped NULL characters', function () {
+    const md = markdownit()
+
+    assert.strictEqual(md.render('foo\\\u0000bar'), '<p>foo\\\uFFFDbar</p>\n')
+  })
+
   it('Should correctly parse strings without tailing \\n', function () {
     const md = markdownit()
 
