@@ -1,5 +1,6 @@
 // fences (``` lang, ~~~ lang)
 
+import { handleAttributes } from '../common/utils.ts'
 import type StateBlock from './state_block.ts'
 
 export default function fence (state: StateBlock, startLine: number, endLine: number, silent: boolean): boolean {
@@ -87,10 +88,14 @@ export default function fence (state: StateBlock, startLine: number, endLine: nu
   state.line = nextLine + (haveEndMarker ? 1 : 0)
 
   const token = state.push('fence', 'code', 0)
-  token.info = params
   token.content = state.getLines(startLine + 1, nextLine, len, true)
   token.markup = markup
   token.map = [startLine, state.line]
+  if (state.md.options.attributes) {
+    token.info = handleAttributes(params, token, state.md.options.hotcrp)
+  } else {
+    token.info = params
+  }
 
   return true
 }

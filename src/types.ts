@@ -1,4 +1,5 @@
 import type StateInline from './rules_inline/state_inline.ts'
+import type Token from './token.ts'
 
 /** @inline */
 export interface Reference {
@@ -183,7 +184,14 @@ export interface MarkdownItOptions {
    *
    * @defaultValue `null`
    */
-  highlight?: ((str: string, lang: string, attrs: string) => string) | null
+  highlight?: ((str: string, lang: string, attrs: string, token: Token) => string) | null
+
+  /**
+   * Enable `{.class #id name="value"}` attributes on fenced code blocks.
+   *
+   * @defaultValue `false`
+   */
+  attributes?: boolean
 
   /**
    * Internal protection against excessive recursion.

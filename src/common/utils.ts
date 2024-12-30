@@ -7,6 +7,7 @@
 import * as mdurl from 'mdurl'
 import * as ucmicro from 'uc.micro'
 import { decodeHTMLStrict } from 'entities'
+import type Token from '../token.ts'
 
 /** @hidden */
 type ClassToWrap = new (...args: any[]) => object
@@ -99,6 +100,13 @@ function replaceEntityPattern (match: string, name: string) {
   }
 
   return match
+}
+
+/** Decodes HTML character references. */
+function replaceEntities (str: string) {
+  if (str.indexOf('&') < 0) { return str }
+
+  return str.replace(ENTITY_RE, replaceEntityPattern)
 }
 
 /** Decodes Markdown backslash escapes. */
@@ -263,6 +271,18 @@ function isCloseBracket (ch: number) {
   return ch === 0x29/* ) */ || ch === 0x5D/* ] */ || ch === 0x7D/* } */
 }
 
+function isAttributeStart (ch: number) {
+  return ch === 0x3A/* : */ || (ch >= 0x41/* A */ && ch <= 0x5A/* Z */) ||
+    ch === 0x5F/* _ */ || (ch >= 0x61/* a */ && ch <= 0x7A/* z */)
+}
+
+function isAttributeContinue (ch: number) {
+  return ch === 0x2D/* - */ || ch === 0x2E/* . */ ||
+    (ch >= 0x30/* 0 */ && ch <= 0x3A/* : */) ||
+    (ch >= 0x41/* A */ && ch <= 0x5A/* Z */) ||
+    ch === 0x5F/* _ */ || (ch >= 0x61/* a */ && ch <= 0x7A/* z */)
+}
+
 /** Normalizes `[reference labels]` for case-insensitive lookup. */
 function normalizeReference (str: string) {
   // Trim and collapse whitespace
@@ -329,6 +349,115 @@ function asciiTrim (str: string) {
 }
 
 /**
+ * Parses a `{.class #id name="value"}` attribute block in a fenced code
+ * info string, adds the attributes to `token`, and returns the info string
+ * with the attribute block removed. If the block is malformed or unterminated,
+ * returns `info` unchanged and leaves `token.attrs` as it was.
+ */
+function handleAttributes (info: string, token: Token, allowNB: boolean): string {
+  let pos = info ? info.indexOf('{') : -1
+  if (pos < 0) {
+    return info
+  }
+
+  const bpos = pos
+  const len = info.length
+  token.attrs = token.attrs || []
+  const oldAttrs = token.attrs
+  const issp = allowNB ? isSpaceNB : isSpace
+
+  for (++pos; pos < len; ++pos) {
+    const apos = pos
+    let ch = info.charCodeAt(pos)
+    let wantAttr: string, wantValue: string, wantJoin: boolean
+    if (issp(ch)) {
+      continue
+    } else if (ch === 0x7D/* } */) {
+      info = info.substring(0, bpos).concat(' ', info.substring(pos + 1)).trim()
+      return info
+    } else if (ch === 0x23/* # */ && pos < len - 1 && isAttributeContinue(info.charCodeAt(pos + 1))) {
+      for (pos += 2; pos < len && isAttributeContinue(info.charCodeAt(pos)); ++pos) {
+        /* nothing */
+      }
+      wantAttr = 'id'
+      wantValue = info.substring(apos + 1, pos)
+      wantJoin = false
+      --pos
+    } else if (ch === 0x2E/* . */ && pos < len - 1 && isAttributeContinue(info.charCodeAt(pos + 1))) {
+      for (pos += 2; pos < len && isAttributeContinue(info.charCodeAt(pos)); ++pos) {
+        /* nothing */
+      }
+      wantAttr = 'class'
+      wantValue = info.substring(apos + 1, pos)
+      wantJoin = true
+      --pos
+    } else if (isAttributeStart(ch)) {
+      for (++pos; pos < len; ++pos) {
+        ch = info.charCodeAt(pos)
+        if (!isAttributeContinue(ch)) {
+          break
+        }
+      }
+      const apos2 = pos
+      wantAttr = info.substring(apos, apos2)
+      while (pos < len && issp(ch)) {
+        ++pos
+        ch = pos < len ? info.charCodeAt(pos) : 0
+      }
+      if (pos === len) {
+        break
+      } else if (ch === 0x3D/* = */) {
+        for (++pos; pos < len; ++pos) {
+          ch = info.charCodeAt(pos)
+          if (!issp(ch)) {
+            break
+          }
+        }
+        if (pos === len || (ch !== 0x22/* " */ && ch !== 0x27/* ' */)) {
+          break
+        }
+        const quot = ch
+        const vpos = pos + 1
+        for (++pos; pos < len; ++pos) {
+          ch = info.charCodeAt(pos)
+          if (ch === quot) {
+            break
+          }
+        }
+        if (pos === len) {
+          break
+        }
+        wantValue = replaceEntities(info.substring(vpos, pos))
+        wantJoin = false
+      } else if (ch === 0x7D/* } */ || apos2 !== pos) {
+        wantValue = ''
+        wantJoin = false
+        --pos
+      } else {
+        break
+      }
+    } else {
+      break
+    }
+
+    if (oldAttrs === token.attrs) {
+      token.attrs = oldAttrs.slice()
+    }
+    if (wantJoin) {
+      token.attrJoin(wantAttr, wantValue)
+    } else {
+      token.attrSet(wantAttr, wantValue)
+    }
+  }
+
+  /* did not find close brace */
+  if (oldAttrs !== token.attrs) {
+    token.attrs = oldAttrs
+  }
+  return info
+}
+
+/**
  * Libraries commonly used by markdown-it and its plugins, re-exported to
  * reduce duplicate dependencies in browser bundles.
  */
@@ -352,5 +481,6 @@ export {
   isCloseBracket,
   escapeRE,
   normalizeReference,
-  asciiTrim
+  asciiTrim,
+  handleAttributes
 }

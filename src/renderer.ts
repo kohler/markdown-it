@@ -57,7 +57,7 @@ default_rules.fence = function (
 
   let highlighted
   if (options.highlight) {
-    highlighted = options.highlight(token.content, langName, langAttrs) || escapeHtml(token.content)
+    highlighted = options.highlight(token.content, langName, langAttrs, token) || escapeHtml(token.content)
   } else {
     highlighted = escapeHtml(token.content)
   }

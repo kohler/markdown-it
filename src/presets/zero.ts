@@ -43,6 +43,9 @@ const options: Required<MarkdownItOptions> = {
   //
   highlight: null,
 
+  // Disable attributes on fences
+  attributes: false,
+
   // Internal protection, recursion limit
   maxNesting: 20
 }
