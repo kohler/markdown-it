@@ -1,6 +1,6 @@
 // Process [link](<to> "stuff")
 
-import { normalizeReference, isSpace } from '../common/utils.ts'
+import { normalizeReference, isSpaceNL } from '../common/utils.ts'
 import type StateInline from './state_inline.ts'
 
 export default function link (state: StateInline, silent: boolean): boolean {
@@ -34,7 +34,7 @@ export default function link (state: StateInline, silent: boolean): boolean {
     pos++
     for (; pos < max; pos++) {
       code = state.src.charCodeAt(pos)
-      if (!isSpace(code) && code !== 0x0A) { break }
+      if (!isSpaceNL(code)) { break }
     }
     if (pos >= max) { return false }
 
@@ -55,7 +55,7 @@ export default function link (state: StateInline, silent: boolean): boolean {
       start = pos
       for (; pos < max; pos++) {
         code = state.src.charCodeAt(pos)
-        if (!isSpace(code) && code !== 0x0A) { break }
+        if (!isSpaceNL(code)) { break }
       }
 
       // [link](  <href>  "title"  )
@@ -69,7 +69,7 @@ export default function link (state: StateInline, silent: boolean): boolean {
         //                         ^^ skipping these spaces
         for (; pos < max; pos++) {
           code = state.src.charCodeAt(pos)
-          if (!isSpace(code) && code !== 0x0A) { break }
+          if (!isSpaceNL(code)) { break }
         }
       }
     }

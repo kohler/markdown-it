@@ -1,4 +1,4 @@
-import { unescapeAll } from '../common/utils.ts'
+import { unescapeAll, analyzeNewline } from '../common/utils.ts'
 
 /** Parses the destination in `[label](destination "title")`. */
 export default function parseLinkDestination (str: string, start: number, max: number) {
@@ -16,6 +16,7 @@ export default function parseLinkDestination (str: string, start: number, max: n
     while (pos < max) {
       code = str.charCodeAt(pos)
       if (code === 0x0A /* \n */) { return result }
+      if (code === 0x0D /* \r */) { return result }
       if (code === 0x3C /* < */) { return result }
       if (code === 0x3E /* > */) {
         result.pos = pos + 1
@@ -24,7 +25,7 @@ export default function parseLinkDestination (str: string, start: number, max: n
         return result
       }
       if (code === 0x5C /* \ */ && pos + 1 < max) {
-        pos += 2
+        pos += 1 + (analyzeNewline(str, pos + 1, max) || 1)
         continue
       }
 

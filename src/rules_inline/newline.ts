@@ -1,12 +1,13 @@
 // Proceess '\n'
 
-import { isSpace } from '../common/utils.ts'
+import { isSpace, analyzeNewline } from '../common/utils.ts'
 import type StateInline from './state_inline.ts'
 
 export default function newline (state: StateInline, silent: boolean): boolean {
   let pos = state.pos
 
-  if (state.src.charCodeAt(pos) !== 0x0A/* \n */) { return false }
+  const ch = state.src.charCodeAt(pos)
+  if (ch !== 0x0A/* \n */ && ch !== 0x0D/* \r */) { return false }
 
   const pmax = state.pending.length - 1
   const max = state.posMax
@@ -33,7 +34,7 @@ export default function newline (state: StateInline, silent: boolean): boolean {
     }
   }
 
-  pos++
+  pos += analyzeNewline(state.src, pos, max)
 
   // skip heading spaces for next line
   while (pos < max && isSpace(state.src.charCodeAt(pos))) { pos++ }

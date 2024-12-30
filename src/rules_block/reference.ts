@@ -21,6 +21,10 @@ function countCodePoints (str: string) {
   return length
 }
 
+function isNewline (ch: number) {
+  return ch === 0x0A /* \n */ || ch === 0x0D /* \r */
+}
+
 // Exclusive end offset of the line, after its newline if present
 function lineEnd (state: StateBlock, line: number) {
   return Math.min(state.eMarks[line] + 1, state.src.length)
@@ -97,7 +101,7 @@ export default function reference (state: StateBlock, startLine: number, _endLin
     }
     if (ch === 0x5C /* \ */) { ch = src.charCodeAt(++pos) }
 
-    if (ch === 0x0A /* \n */ && pos < max) {
+    if (isNewline(ch) && pos < max) {
       const nextPos = getNextLinePos(state, nextLine)
       if (nextPos < 0) { return false }
       rawLabel += src.slice(segmentStart, max)
@@ -121,7 +125,7 @@ export default function reference (state: StateBlock, startLine: number, _endLin
   pos = labelEnd + 2
   while (pos < max) {
     const ch = src.charCodeAt(pos)
-    if (ch === 0x0A) {
+    if (isNewline(ch)) {
       const nextPos = getNextLinePos(state, nextLine)
       if (nextPos < 0) { break }
       pos = nextPos
@@ -152,7 +156,7 @@ export default function reference (state: StateBlock, startLine: number, _endLin
   //                       ^^^ skipping those spaces
   while (pos < max) {
     const ch = src.charCodeAt(pos)
-    if (ch === 0x0A) {
+    if (isNewline(ch)) {
       const nextPos = getNextLinePos(state, nextLine)
       if (nextPos < 0) { break }
       pos = nextPos
@@ -194,7 +198,7 @@ export default function reference (state: StateBlock, startLine: number, _endLin
     pos++
   }
 
-  if (pos < max && src.charCodeAt(pos) !== 0x0A) {
+  if (pos < max && !isNewline(src.charCodeAt(pos))) {
     if (title) {
       // garbage at the end of the line after title,
       // but it could still be a valid reference if we roll back
@@ -210,7 +214,7 @@ export default function reference (state: StateBlock, startLine: number, _endLin
     }
   }
 
-  if (pos < max && src.charCodeAt(pos) !== 0x0A) {
+  if (pos < max && !isNewline(src.charCodeAt(pos))) {
     // garbage at the end of the line
     return false
   }

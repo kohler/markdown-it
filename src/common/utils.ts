@@ -166,6 +166,18 @@ function isSpace (code: number) {
   return false
 }
 
+/** Checks whether a character code is a space, tab, or newline (`\n` or `\r`). */
+function isSpaceNL (code: number) {
+  switch (code) {
+    case 0x09:
+    case 0x0A:
+    case 0x0D:
+    case 0x20:
+      return true
+  }
+  return false
+}
+
 /** Checks whether a character code is a space, tab, or nonbreaking space. */
 function isSpaceNB (code: number) {
   switch (code) {
@@ -281,6 +293,25 @@ function isAttributeContinue (ch: number) {
     (ch >= 0x30/* 0 */ && ch <= 0x3A/* : */) ||
     (ch >= 0x41/* A */ && ch <= 0x5A/* Z */) ||
     ch === 0x5F/* _ */ || (ch >= 0x61/* a */ && ch <= 0x7A/* z */)
+}
+
+/**
+ * Returns the length of the newline sequence (`\n`, `\r`, or `\r\n`) at
+ * `pos` in `s`, or 0 if there is no newline at `pos`.
+ */
+function analyzeNewline (s: string, pos: number, max: number) {
+  if (pos === max) {
+    return 0
+  }
+  const ch = s.charCodeAt(pos)
+  if (ch === 0x0A) {
+    return 1
+  } else if (ch !== 0x0D) {
+    return 0
+  } else if (pos + 1 !== max && s.charCodeAt(pos + 1) === 0x0A) {
+    return 2
+  }
+  return 1
 }
 
 /** Normalizes `[reference labels]` for case-insensitive lookup. */
@@ -473,12 +504,14 @@ export {
   escapeHtml,
   arrayReplaceAt,
   isSpace,
+  isSpaceNL,
   isSpaceNB,
   isWhiteSpace,
   isMdAsciiPunct,
   isPunctChar,
   isPunctCharCode,
   isCloseBracket,
+  analyzeNewline,
   escapeRE,
   normalizeReference,
   asciiTrim,

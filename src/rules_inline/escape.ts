@@ -1,6 +1,6 @@
 // Process escaped chars and hardbreaks
 
-import { isSpace } from '../common/utils.ts'
+import { isSpace, analyzeNewline } from '../common/utils.ts'
 import type StateInline from './state_inline.ts'
 
 const ESCAPED: number[] = []
@@ -22,12 +22,12 @@ export default function escape (state: StateInline, silent: boolean): boolean {
 
   let ch1 = state.src.charCodeAt(pos)
 
-  if (ch1 === 0x0A) {
+  if (ch1 === 0x0A || ch1 === 0x0D) {
     if (!silent) {
       state.push('hardbreak', 'br', 0)
     }
 
-    pos++
+    pos += analyzeNewline(state.src, pos, max)
     // skip leading whitespaces from next line
     while (pos < max) {
       ch1 = state.src.charCodeAt(pos)

@@ -1,5 +1,5 @@
 import Token from '../token.ts'
-import { isSpace } from '../common/utils.ts'
+import { isSpace, analyzeNewline } from '../common/utils.ts'
 import type MarkdownIt from '../markdownit.ts'
 import type { Env } from '../types.ts'
 
@@ -83,10 +83,16 @@ class StateBlock {
         }
       }
 
-      if (ch === 0x0A || pos === len - 1) {
-        if (ch !== 0x0A) { pos++ }
+      if (ch === 0x0A || ch === 0x0D || pos === len - 1) {
         this.bMarks.push(start)
-        this.eMarks.push(pos)
+        if (ch === 0x0A) {
+          this.eMarks.push(pos)
+        } else if (ch === 0x0D) {
+          this.eMarks.push(pos)
+          pos += analyzeNewline(s, pos, len) - 1
+        } else {
+          this.eMarks.push(pos + 1)
+        }
         this.tShift.push(indent)
         this.sCount.push(offset)
         this.bsCount.push(0)

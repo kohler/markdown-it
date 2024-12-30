@@ -13,6 +13,7 @@ import type StateInline from './state_inline.ts'
 function isTerminatorChar (ch: number) {
   switch (ch) {
     case 0x0A/* \n */:
+    case 0x0D/* \r */:
     case 0x21/* ! */:
     case 0x23/* # */:
     case 0x24/* $ */:
@@ -66,7 +67,7 @@ export default function text (state: StateInline, silent: boolean): boolean {
 // flexibility required.
 
 /*
-var TERMINATOR_RE = /[\n!#$%&*+\-:<=>@[\\\]^_`{}~]/;
+var TERMINATOR_RE = /[\r\n!#$%&*+\-:<=>@[\\\]^_`{}~]/;
 
 module.exports = function text(state, silent) {
   var pos = state.pos,
