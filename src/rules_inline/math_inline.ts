@@ -30,8 +30,7 @@ export default function math_inline (state: StateInline, silent: boolean): boole
   if (pos === max ||
       delim.length > 2 ||
       isWhiteSpace(src.charCodeAt(pos))) {
-    if (!silent) { state.pending += delim }
-    state.pos += delim.length
+    state.shiftPending(delim.length, silent)
     return true
   }
 
@@ -61,7 +60,6 @@ export default function math_inline (state: StateInline, silent: boolean): boole
     return true
   }
 
-  if (!silent) { state.pending += delim }
-  state.pos += delim.length
+  state.shiftPending(delim.length, silent)
   return true
 }

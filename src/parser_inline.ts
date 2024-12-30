@@ -170,10 +170,10 @@ class ParserInline {
         continue
       }
 
-      state.pending += state.src[state.pos++]
+      state.shiftPending(1)
     }
 
-    if (state.pending) {
+    if (state.pendingStart !== state.pendingEnd) {
       state.pushPending()
     }
   }

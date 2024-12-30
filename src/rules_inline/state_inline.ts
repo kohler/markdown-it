@@ -26,7 +26,8 @@ class StateInline {
   pos = 0
   declare posMax: number
   level = 0
-  pending = ''
+  pendingStart = 0
+  pendingEnd = 0
   pendingLevel = 0
 
   // Stores { start: end } pairs. Useful for backtrack
@@ -71,18 +72,57 @@ class StateInline {
   //
   pushPending (): Token {
     const token = new Token('text', '', 0)
-    token.content = this.pending
+    token.content = this.src.slice(this.pendingStart, this.pendingEnd)
     token.level = this.pendingLevel
     this.tokens.push(token)
-    this.pending = ''
+    this.pendingStart = this.pendingEnd = this.pos
     return token
+  }
+
+  // Add slice of `this.src` as pending text
+  //
+  shiftPending (amt: number, silent?: boolean): void {
+    if (!silent) {
+      if (this.pendingEnd !== this.pos) {
+        if (this.pendingStart !== this.pendingEnd) {
+          this.pushPending()
+        }
+        this.pendingStart = this.pendingEnd = this.pos
+      }
+      this.pendingEnd += amt
+    }
+    this.pos += amt
+  }
+
+  // Remove suffix of pending text
+  //
+  trimPending (amt: number): void {
+    this.pendingEnd -= amt
+  }
+
+  // Return pending text
+  //
+  getPending (): string {
+    return this.src.slice(this.pendingStart, this.pendingEnd)
+  }
+
+  // Return length of pending text
+  //
+  pendingLength (): number {
+    return this.pendingEnd - this.pendingStart
+  }
+
+  // Return character code in pending text
+  //
+  pendingCharCodeAt (idx: number): number {
+    return this.src.charCodeAt(this.pendingStart + idx)
   }
 
   // Push new token to "stream".
   // If pending text exists - flush it as text token
   //
   push (type: string, tag: string, nesting: -1 | 0 | 1): Token {
-    if (this.pending) {
+    if (this.pendingStart !== this.pendingEnd) {
       this.pushPending()
     }
 

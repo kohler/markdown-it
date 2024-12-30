@@ -28,9 +28,11 @@ export default function linkify (state: StateInline, silent: boolean): boolean {
   if (state.src.charCodeAt(pos + 2) !== 0x2F/* / */) return false
 
   // Search backwards for the scheme, but no more than 10 characters, the length
-  // of the pending string, or the length of the source prefix.
-  // Use state.src instead of state.pending because it is faster to access.
-  const protoMin = pos - Math.min(10, state.pending.length, pos)
+  // of the pending string, or the length of the source prefix. Pending text
+  // is a slice of state.src; the characters before `pos` are pending only if
+  // that slice ends at `pos`.
+  const pendingLength = state.pendingEnd === pos ? state.pendingLength() : 0
+  const protoMin = pos - Math.min(10, pendingLength, pos)
   let protoStart = pos
   while (protoStart > protoMin && isSchemeChar(state.src.charCodeAt(protoStart - 1))) {
     protoStart--
@@ -63,7 +65,7 @@ export default function linkify (state: StateInline, silent: boolean): boolean {
   if (!state.md.validateLink(fullUrl)) return false
 
   if (!silent) {
-    state.pending = state.pending.slice(0, -protoLength)
+    state.trimPending(protoLength)
 
     const token_o = state.push('link_open', 'a', 1)
     token_o.attrs = [['href', fullUrl]]

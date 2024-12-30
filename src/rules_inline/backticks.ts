@@ -78,7 +78,6 @@ export default function backtick (state: StateInline, silent: boolean): boolean 
     }
   }
 
-  if (!silent) state.pending += marker
-  state.pos = pos
+  state.shiftPending(openerLength, silent)
   return true
 }
