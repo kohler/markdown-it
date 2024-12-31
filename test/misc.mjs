@@ -526,6 +526,15 @@ describe('HotCRP', function () {
       '<img src="//dude.com/hj.jpg" alt="B" crossorigin> <img src="/hi.jpg" alt="C"></p>\n'
     )
   })
+
+  it('Should preserve text_special tokens', function () {
+    const md2 = markdownit('hotcrp')
+    md2.renderer.rules.text_special = function () { return '*' }
+    assert.strictEqual(
+      md2.render('Hello. \uFFFC Hello.'),
+      '<p>Hello. * Hello.</p>\n'
+    )
+  })
 })
 
 describe('attributes option', function () {
