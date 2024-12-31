@@ -37,6 +37,7 @@ function isTerminatorChar (ch: number) {
     case 0x7B/* { */:
     case 0x7D/* } */:
     case 0x7E/* ~ */:
+    case 0xFFFC/* OBJECT REPLACEMENT CHARACTER */:
       return true
     default:
       return false
@@ -68,7 +69,7 @@ export default function text (state: StateInline, silent: boolean): boolean {
 // flexibility required.
 
 /*
-var TERMINATOR_RE = /[\0\r\n!#$%&*+\-:<=>@[\\\]^_`{}~]/;
+var TERMINATOR_RE = /[\0\r\n!#$%&*+\-:<=>@[\\\]^_`{}~\uFFFC]/;
 
 module.exports = function text(state, silent) {
   var pos = state.pos,

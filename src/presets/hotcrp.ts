@@ -58,8 +58,7 @@ export default {
       rules: [
         'block',
         'strip_references',
-        'inline',
-        'text_join'
+        'inline'
       ]
     },
 
