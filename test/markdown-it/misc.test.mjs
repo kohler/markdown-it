@@ -635,6 +635,16 @@ describe('HotCRP', function () {
     )
   })
 
+  it('Should allow nonbreaking spaces in ATX headings', function () {
+    assert.strictEqual(md.render('#\u00A0Title'), '<h1>Title</h1>\n')
+    assert.strictEqual(md.render('##\u202FTitle'), '<h2>Title</h2>\n')
+    assert.strictEqual(md.render('#\u00A0Title\u202F#'), '<h1>Title</h1>\n')
+    assert.strictEqual(
+      markdownit().render('#\u00A0Title'),
+      '<p>#\u00A0Title</p>\n'
+    )
+  })
+
   it('Should mark cross-site <img> with crossorigin', function () {
     assert.strictEqual(
       md.render('![A](https://dude.com/hi.jpg) ![B](//dude.com/hj.jpg) ![C](/hi.jpg)'),

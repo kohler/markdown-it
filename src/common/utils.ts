@@ -178,12 +178,16 @@ function isSpaceNL (code: number) {
   return false
 }
 
-/** Checks whether a character code is a space, tab, or nonbreaking space. */
+/**
+ * Checks whether a character code is a space, tab, nonbreaking space, or
+ * narrow nonbreaking space.
+ */
 function isSpaceNB (code: number) {
   switch (code) {
     case 0x09:
     case 0x20:
     case 0xA0:
+    case 0x202F:
       return true
   }
   return false
